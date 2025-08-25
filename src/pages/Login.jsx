@@ -1,27 +1,45 @@
 import React, { useState } from "react";
 import { login } from "../services/authService";
 
-export default function Login() {
-  const [formData, setFormData] = useState({ email: "", password: "" });
+function Login() {
+  const [form, setForm] = useState({ usernameOrEmail: "", password: "" });
+  const [error, setError] = useState("");
 
-  const handleChange = (e) =>
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+  const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await login(formData);
-      alert("Login successful!");
-    } catch {
-      alert("Login failed.");
+      const data = await login(form);
+      console.log("Login success:", data);
+      localStorage.setItem("token", data.token); // ✅ token save
+    } catch (err) {
+      setError(err.message || "Login error");
     }
   };
 
   return (
     <form onSubmit={handleSubmit}>
-      <input name="email" onChange={handleChange} placeholder="Email" />
-      <input name="password" onChange={handleChange} placeholder="Password" />
+      <input
+        type="text"
+        name="usernameOrEmail"
+        placeholder="Username or Email"
+        value={form.usernameOrEmail}
+        onChange={handleChange}
+      />
+      <input
+        type="password"
+        name="password"
+        placeholder="Password"
+        value={form.password}
+        onChange={handleChange}
+      />
       <button type="submit">Login</button>
+      {error && <p style={{ color: "red" }}>{error}</p>}
     </form>
   );
 }
+
+export default Login;
