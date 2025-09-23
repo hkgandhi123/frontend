@@ -1,82 +1,221 @@
 // src/pages/Home.jsx
-import React, { useEffect, useState } from "react";
+// src/pages/Home.jsx
+import React, { useEffect, useState, useCallback } from "react";
+import { useUserContext } from "../context/UserContext";
 import axios from "axios";
+import BottomNav from "../components/BottomNav";
+import CreatePostModal from "../components/CreatePostModal";
+import CreateStoryModal from "../components/CreateStoryModal";
+import StoryViewerModal from "../components/StoryViewerModal";
+import HomeHeader from "../components/HomeHeader";
+
+// React Icons
+import { AiOutlineHeart } from "react-icons/ai";
+import { BsBookmark, BsChat, BsThreeDots } from "react-icons/bs";
+import { FiSend } from "react-icons/fi";
 
 const Home = () => {
-  const [posts, setPosts] = useState([]);
+  const { posts, setPosts, backendURL, user } = useUserContext();
   const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [storyModalOpen, setStoryModalOpen] = useState(false);
+  const [stories, setStories] = useState([]);
+  const [currentStory, setCurrentStory] = useState(null);
+  const [showMenu, setShowMenu] = useState(null);
 
-  // Fetch all posts from backend
-  const fetchPosts = async () => {
+  const api = axios.create({
+    baseURL: backendURL,
+    withCredentials: true,
+  });
+
+  // Fetch posts
+  const fetchPosts = useCallback(async () => {
     try {
-      const res = await axios.get("https://bkc-dt1n.onrender.com/posts", {
-        withCredentials: true,
-      });
-      if (res.data.success) {
-        setPosts(res.data.posts);
+      const res = await api.get("/posts");
+      if (res.data?.posts) {
+        const updatedPosts = res.data.posts.map((p) => ({
+          ...p,
+          image: p.image?.startsWith("http") ? p.image : `${backendURL}${p.image}`,
+          user: {
+            ...p.user,
+            profilePic: p.user?.profilePic
+              ? p.user.profilePic.startsWith("http")
+                ? p.user.profilePic
+                : `${backendURL}${p.user.profilePic}`
+              : "/default-avatar.png",
+          },
+        }));
+        setPosts(updatedPosts.reverse());
       }
     } catch (err) {
-      console.error("❌ Feed fetch error:", err);
+      console.error("❌ Fetch posts error:", err.response?.data || err.message);
     } finally {
       setLoading(false);
+    }
+  }, [backendURL, setPosts, api]);
+
+  // Fetch stories
+  const fetchStories = useCallback(async () => {
+    try {
+      const res = await api.get("/stories");
+      if (res.data?.stories) {
+        const updatedStories = res.data.stories.map((s) => ({
+          ...s,
+          media: s.media?.startsWith("http") ? s.media : `${backendURL}${s.media}`,
+          user: {
+            ...s.user,
+            profilePic: s.user?.profilePic
+              ? s.user.profilePic.startsWith("http")
+                ? s.user.profilePic
+                : `${backendURL}${s.user.profilePic}`
+              : "/default-avatar.png",
+          },
+        }));
+        setStories(updatedStories);
+      }
+    } catch (err) {
+      console.error("❌ Fetch stories error:", err.response?.data || err.message);
+    }
+  }, [backendURL, api]);
+
+  // Delete post
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) return;
+    try {
+      await api.delete(`/posts/${postId}`);
+      setPosts((prev) => prev.filter((p) => p._id !== postId));
+      alert("✅ Post deleted successfully");
+    } catch (err) {
+      console.error("❌ Delete post error:", err.response?.data || err.message);
+      alert("❌ Failed to delete post");
     }
   };
 
   useEffect(() => {
-    fetchPosts();
-  }, []);
-
-  if (loading) return <p>Loading feed...</p>;
-  if (posts.length === 0) return <p>No posts yet.</p>;
+    if (user) {
+      fetchPosts();
+      fetchStories();
+    }
+  }, [user, fetchPosts, fetchStories]);
 
   return (
-    <div className="home-feed" style={{ maxWidth: "600px", margin: "0 auto" }}>
-      {posts.map((post) => (
-        <div
-          key={post._id}
-          className="post-card"
-          style={{
-            border: "1px solid #ccc",
-            borderRadius: "8px",
-            margin: "20px 0",
-            padding: "10px",
-            backgroundColor: "#fff",
-          }}
-        >
-          {/* User Info */}
-          <div
-            className="post-user"
-            style={{ display: "flex", alignItems: "center", marginBottom: "10px" }}
-          >
-            <img
-              src={
-                post.user.profilePic
-                  ? `https://bkc-dt1n.onrender.com${post.user.profilePic}`
-                  : "https://via.placeholder.com/40"
-              }
-              alt={post.user.username}
-              style={{ width: "40px", height: "40px", borderRadius: "50%", marginRight: "10px" }}
-            />
-            <strong>{post.user.username}</strong>
-          </div>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <HomeHeader setModalOpen={setModalOpen} setStoryModalOpen={setStoryModalOpen} />
 
-          {/* Post Image */}
-          <div className="post-image" style={{ marginBottom: "10px" }}>
-            <img
-              src={`https://bkc-dt1n.onrender.com${post.image}`}
-              alt="post"
-              style={{ width: "100%", borderRadius: "8px" }}
-            />
-          </div>
-
-          {/* Caption */}
-          {post.caption && (
-            <div className="post-caption">
-              <p>{post.caption}</p>
+      {/* Stories */}
+      <div className="mt-14 py-2 border-b bg-white">
+        <div className="flex space-x-4 overflow-x-auto px-2 scrollbar-hide">
+          {/* Your Story */}
+          <div className="flex flex-col items-center cursor-pointer" onClick={() => setStoryModalOpen(true)}>
+            <div className="w-16 h-16 p-[2px] bg-gray-300 rounded-full relative">
+              <img
+                src={user?.profilePic?.startsWith("http") ? user.profilePic : `${backendURL}${user?.profilePic}`}
+                alt="Your Story"
+                className="w-full h-full rounded-full object-cover border-2 border-white"
+              />
+              <div className="absolute bottom-0 right-0 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white text-white font-bold text-sm">
+                +
+              </div>
             </div>
-          )}
+            <span className="text-xs mt-1">Your Story</span>
+          </div>
+
+          {stories.map((story) => (
+            <div
+              key={story._id}
+              className="flex flex-col items-center cursor-pointer"
+              onClick={() => setCurrentStory(story)}
+            >
+              <div className="w-16 h-16 p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 rounded-full">
+                <img
+                  src={story.user?.profilePic}
+                  alt={`${story.user?.username || "User"} story`}
+                  className="w-full h-full rounded-full object-cover border-2 border-white"
+                />
+              </div>
+              <span className="text-xs mt-1">{story.user?.username || "User"}</span>
+            </div>
+          ))}
         </div>
-      ))}
+      </div>
+
+      {/* Story Viewer */}
+      {currentStory && <StoryViewerModal story={currentStory} onClose={() => setCurrentStory(null)} />}
+
+      {/* Posts Feed */}
+      <div className="pt-2 max-w-2xl mx-auto flex flex-col space-y-8 pb-16">
+        {loading ? (
+          <p className="text-center text-gray-500">Loading posts...</p>
+        ) : posts.length === 0 ? (
+          <p className="text-center text-gray-500">No posts yet.</p>
+        ) : (
+          posts.map((post) => (
+            <div key={post._id} className="bg-white border rounded-lg shadow-sm flex flex-col">
+              <div className="flex items-center justify-between p-3">
+                <div className="flex items-center space-x-3">
+                  <img src={post.user?.profilePic} alt="Profile" className="w-9 h-9 rounded-full object-cover" />
+                  <span className="font-semibold text-sm">{post.user?.username || "User"}</span>
+                </div>
+
+                {post.user?._id?.toString() === user?._id?.toString() ? (
+                  <div className="relative">
+                    <button onClick={() => setShowMenu(showMenu === post._id ? null : post._id)} className="text-xl hover:opacity-70">
+                      <BsThreeDots />
+                    </button>
+                    {showMenu === post._id && (
+                      <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow-lg z-50">
+                        <button
+                          onClick={() => {
+                            handleDeletePost(post._id);
+                            setShowMenu(null);
+                          }}
+                          className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <BsThreeDots className="text-xl hover:opacity-70" />
+                )}
+              </div>
+
+              <img src={post.image} alt="Post" className="w-full object-cover" />
+
+              <div className="flex justify-between items-center px-3 py-2">
+                <div className="flex space-x-4 text-2xl">
+                  <AiOutlineHeart className="hover:opacity-70" />
+                  <BsChat className="hover:opacity-70" />
+                  <FiSend className="hover:opacity-70" onClick={() => window.alert("Messages coming soon")} />
+                </div>
+                <BsBookmark className="text-2xl hover:opacity-70" />
+              </div>
+
+              <div className="px-3 pb-3">
+                <p className="font-semibold">123 likes</p>
+                <p>
+                  <span className="font-semibold">{post.user?.username}</span> {post.caption}
+                </p>
+                <button className="text-gray-500 text-sm">View all comments</button>
+                <div className="mt-2">
+                  <input type="text" placeholder="Add a comment..." className="w-full border-none focus:ring-0 text-sm" />
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
+      {/* Bottom nav */}
+      <div className="fixed bottom-0 left-0 right-0 sm:hidden">
+        <BottomNav />
+      </div>
+
+      {/* Modals */}
+      {modalOpen && <CreatePostModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onPostCreated={fetchPosts} />}
+      {storyModalOpen && <CreateStoryModal isOpen={storyModalOpen} onClose={() => setStoryModalOpen(false)} onStoryCreated={fetchStories} />}
     </div>
   );
 };

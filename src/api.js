@@ -1,93 +1,61 @@
 // src/services/api.js
 import axios from "axios";
 
+// 🔹 Axios instance with base URL & credentials
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL 
-    ? process.env.REACT_APP_API_URL 
-    : window.location.hostname === "localhost"
-      ? "http://localhost:5000"
-      : "https://bkc-dt1n.onrender.com",
-  withCredentials: true, // ✅ Cookie har request ke sath bhejega
+  baseURL: process.env.REACT_APP_API_URL || "https://bkc-dt1n.onrender.com",
+  withCredentials: true, // ✅ Cookies automatically sent
 });
 
-/* ===================== AUTH APIs ===================== */
+// ========== AUTH ==========
 
 // 🔹 Signup
 export const signup = async (formData) => {
-  const res = await API.post("/auth/signup", formData);
-  return res.data;
+  try {
+    const res = await API.post("/auth/signup", formData);
+    return res.data;
+  } catch (err) {
+    console.error("Signup error:", err.response?.data || err.message);
+    throw err;
+  }
 };
 
 // 🔹 Login
 export const login = async (formData) => {
-  const res = await API.post("/auth/login", formData);
-  return res.data;
-};
-
-// 🔹 Get Profile
-export const getProfile = async () => {
-  const res = await API.get("/auth/profile");
-  return res.data;
-};
-
-// 🔹 Update Profile
-export const updateProfile = async (userData) => {
-  const res = await API.put("/auth/profile", userData);
-  return res.data;
-};
-
-// 🔹 Logout
-export const logout = async () => {
-  const res = await API.post("/auth/logout");
-  return res.data;
-};
-
-// 🔹 Check if logged in
-export const isAuthenticated = async () => {
   try {
-    await getProfile();
-    return true;
-  } catch {
-    return false;
+    const res = await API.post("/auth/login", formData);
+    return res.data;
+  } catch (err) {
+    console.error("Login error:", err.response?.data || err.message);
+    throw err;
   }
 };
 
-/* ===================== POSTS APIs ===================== */
-
-// 🔹 Get all posts
-export const getPosts = async () => {
-  const res = await API.get("/posts");
-  return res.data;
+// 🔹 Get logged-in user profile
+export const getProfile = async () => {
+  try {
+    const res = await API.get("/auth/profile");
+    return res.data;
+  } catch (err) {
+    console.error("Get profile error:", err.response?.data || err.message);
+    throw err;
+  }
 };
 
-// 🔹 Get my posts
-export const getMyPosts = async () => {
-  const res = await API.get("/posts/my-posts");
-  return res.data;
-};
+// 🔹 Update profile (username, bio, profilePic)
+export const updateProfile = async (profileData) => {
+  try {
+    const formData = new FormData();
+    if (profileData.username) formData.append("username", profileData.username);
+    if (profileData.bio) formData.append("bio", profileData.bio);
+    if (profileData.profilePic) formData.append("profilePic", profileData.profilePic);
 
-// 🔹 Create a new post (with image/video)
-export const createPost = async (formData) => {
-  const res = await API.post("/posts", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return res.data;
-};
-
-// 🔹 Delete a post
-export const deletePost = async (postId) => {
-  const res = await API.delete(`/posts/${postId}`);
-  return res.data;
-};
-
-// 🔹 Like a post
-export const likePost = async (postId) => {
-  const res = await API.post(`/posts/${postId}/like`);
-  return res.data;
-};
-
-// 🔹 Comment on a post
-export const commentOnPost = async (postId, text) => {
-  const res = await API.post(`/posts/${postId}/comment`, { text });
-  return res.data;
+    const res = await API.put("/auth/profile", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  } catch (err) {
+    console.error("Update profile error:", err.response?.data || err.message);
+    throw err;
+  }
 };
