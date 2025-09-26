@@ -74,16 +74,17 @@ const Home = () => {
   return (
     <>
       <Helmet>
-        <title>BKC&funS - Home</title>
+        <title>BKC_Home</title>
       </Helmet>
 
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-gray-50 relative">
         {/* Header */}
         <HomeHeader setModalOpen={setModalOpen} setStoryModalOpen={setStoryModalOpen} />
 
         {/* Stories */}
         <div className="mt-14 py-2 border-b bg-white">
           <div className="flex space-x-4 overflow-x-auto px-2 scrollbar-hide">
+            {/* Your Story */}
             <div className="flex flex-col items-center cursor-pointer" onClick={() => setStoryModalOpen(true)}>
               <div className="w-16 h-16 p-[2px] bg-gray-300 rounded-full relative">
                 <img
@@ -121,7 +122,7 @@ const Home = () => {
         {currentStory && <StoryViewerModal story={currentStory} onClose={() => setCurrentStory(null)} />}
 
         {/* Posts Feed */}
-        <div className="pt-2 max-w-2xl mx-auto flex flex-col space-y-8 pb-16">
+        <div className="pt-2 max-w-2xl mx-auto flex flex-col space-y-8 pb-20 sm:pb-28">
           {loadingPosts ? (
             <p className="text-center text-gray-500">Loading posts...</p>
           ) : posts.length === 0 ? (
@@ -132,20 +133,13 @@ const Home = () => {
                 {/* Post Header */}
                 <div className="flex items-center justify-between p-3">
                   <div className="flex items-center space-x-3">
-                    <img
-                      src={resolveProfilePic(post.user?.profilePic)}
-                      alt="Profile"
-                      className="w-9 h-9 rounded-full object-cover"
-                    />
+                    <img src={resolveProfilePic(post.user?.profilePic)} alt="Profile" className="w-9 h-9 rounded-full object-cover" />
                     <span className="font-semibold text-sm">{post.user?.username || "User"}</span>
                   </div>
 
                   {post.user?._id?.toString() === user?._id?.toString() ? (
                     <div className="relative">
-                      <button
-                        onClick={() => setShowMenu(showMenu === post._id ? null : post._id)}
-                        className="text-xl hover:opacity-70"
-                      >
+                      <button onClick={() => setShowMenu(showMenu === post._id ? null : post._id)} className="text-xl hover:opacity-70">
                         <BsThreeDots />
                       </button>
                       {showMenu === post._id && (
@@ -175,10 +169,7 @@ const Home = () => {
                   <div className="flex space-x-4 text-2xl">
                     <AiOutlineHeart className="hover:opacity-70" />
                     <BsChat className="hover:opacity-70" />
-                    <FiSend
-                      className="hover:opacity-70"
-                      onClick={() => window.alert("Messages coming soon")}
-                    />
+                    <FiSend className="hover:opacity-70" onClick={() => window.alert("Messages coming soon")} />
                   </div>
                   <BsBookmark className="text-2xl hover:opacity-70" />
                 </div>
@@ -191,11 +182,7 @@ const Home = () => {
                   </p>
                   <button className="text-gray-500 text-sm">View all comments</button>
                   <div className="mt-2">
-                    <input
-                      type="text"
-                      placeholder="Add a comment..."
-                      className="w-full border-none focus:ring-0 text-sm"
-                    />
+                    <input type="text" placeholder="Add a comment..." className="w-full border-none focus:ring-0 text-sm" />
                   </div>
                 </div>
               </div>
@@ -203,27 +190,19 @@ const Home = () => {
           )}
         </div>
 
-        {/* Bottom Nav */}
-        <div className="fixed bottom-0 left-0 right-0 sm:hidden">
-          <BottomNav />
-        </div>
+        {/* Bottom Nav (mobile responsive) */}
+        {user && <div className="fixed bottom-0 left-0 right-0 sm:hidden z-50"><BottomNav /></div>}
+
 
         {/* Modals */}
-        {modalOpen && (
-          <CreatePostModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onPostCreated={fetchPosts} />
-        )}
-
-        {storyModalOpen && (
-          <CreateStoryModal
-            isOpen={storyModalOpen}
-            onClose={() => setStoryModalOpen(false)}
-            onStoryCreated={fetchAllStories}
-          />
-        )}
+        {modalOpen && <CreatePostModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onPostCreated={fetchPosts} />}
+        {storyModalOpen && <CreateStoryModal isOpen={storyModalOpen} onClose={() => setStoryModalOpen(false)} onStoryCreated={fetchAllStories} />}
       </div>
     </>
   );
 };
 
 export default Home;
+
+
 

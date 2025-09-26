@@ -3,7 +3,7 @@ import axios from "axios";
 
 export const backendURL = process.env.REACT_APP_API_URL || "http://localhost:5000";
 
-// 🔹 Axios instance
+// Axios instance
 const api = axios.create({
   baseURL: backendURL,
   withCredentials: true,
@@ -16,26 +16,11 @@ export const resolveURL = (path) => {
 };
 
 /* ------------------ AUTH ------------------ */
+export const signup = async (data) => (await api.post("/auth/signup", data)).data;
+export const login = async (data) => (await api.post("/auth/login", data)).data;
+export const getProfile = async () => (await api.get("/auth/profile")).data;
+export const logout = async () => (await api.post("/auth/logout")).data;
 
-// Signup
-export const signup = async (data) => {
-  const res = await api.post("/auth/signup", data);
-  return res.data;
-};
-
-// Login
-export const login = async (data) => {
-  const res = await api.post("/auth/login", data);
-  return res.data;
-};
-
-// Get current user profile
-export const getProfile = async () => {
-  const res = await api.get("/auth/profile");
-  return res.data;
-};
-
-// Update profile
 export const updateProfile = async (profileData) => {
   const formData = new FormData();
   if (profileData.username) formData.append("username", profileData.username);
@@ -48,15 +33,7 @@ export const updateProfile = async (profileData) => {
   return res.data;
 };
 
-// Logout
-export const logout = async () => {
-  const res = await api.post("/auth/logout");
-  return res.data;
-};
-
 /* ------------------ POSTS ------------------ */
-
-// Get all posts
 export const getPosts = async () => {
   try {
     const res = await api.get("/posts", { headers: { "Cache-Control": "no-store" } });
@@ -67,12 +44,14 @@ export const getPosts = async () => {
   }
 };
 
-// Create post (with optional image)
+// ✅ Create post with mandatory image
 export const createPost = async (data) => {
+  if (!data.image) throw new Error("Image is required");
+
   try {
     const formData = new FormData();
+    formData.append("image", data.image); // must be "image"
     if (data.caption) formData.append("caption", data.caption);
-    if (data.image) formData.append("image", data.image); // file object
 
     const res = await api.post("/posts", formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -85,14 +64,9 @@ export const createPost = async (data) => {
 };
 
 // Delete post
-export const deletePost = async (id) => {
-  const res = await api.delete(`/posts/${id}`);
-  return res.data;
-};
+export const deletePost = async (id) => (await api.delete(`/posts/${id}`)).data;
 
 /* ------------------ STORIES ------------------ */
-
-// Get all stories
 export const getStories = async () => {
   try {
     const res = await api.get("/stories");
@@ -103,12 +77,13 @@ export const getStories = async () => {
   }
 };
 
-// Create story (with optional image)
 export const createStory = async (data) => {
+  if (!data.image) throw new Error("Image is required for story");
+
   try {
     const formData = new FormData();
+    formData.append("image", data.image);
     if (data.caption) formData.append("caption", data.caption);
-    if (data.image) formData.append("image", data.image); // file object
 
     const res = await api.post("/stories", formData, {
       headers: { "Content-Type": "multipart/form-data" },

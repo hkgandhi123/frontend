@@ -1,6 +1,7 @@
+// src/components/CreatePost.jsx
 import React, { useState } from "react";
 import { useUserContext } from "../context/UserContext";
-import { createPost } from "../api"; // use the API helper instead of raw axios
+import { createPost } from "../api";
 import { useNavigate } from "react-router-dom";
 
 const CreatePost = () => {
@@ -12,6 +13,7 @@ const CreatePost = () => {
 
   const navigate = useNavigate();
 
+  // ✅ File selection + preview
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -19,27 +21,30 @@ const CreatePost = () => {
     setPreview(URL.createObjectURL(file));
   };
 
+  // ✅ Form submit
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!imageFile && !caption) return alert("Add an image or caption ❌");
+
+    if (!imageFile) return alert("Image is required ❌"); // mandatory image
+
     setLoading(true);
 
     try {
       const formData = new FormData();
-      if (imageFile) formData.append("image", imageFile);
+      formData.append("image", imageFile);
       formData.append("caption", caption);
 
-      const res = await createPost(formData); // backend uploads to Cloudinary
+      const res = await createPost({ image: imageFile, caption });
 
       if (res.post) {
-        setPosts([res.post, ...posts]); // instantly add new post to feed
-        navigate("/"); // redirect to home after posting
+        setPosts([res.post, ...posts]); // instantly add to feed
+        navigate("/"); // redirect to home
       } else {
         alert("Post upload failed ❌");
       }
     } catch (err) {
       console.error("Post upload error:", err);
-      alert("Failed to upload post ❌");
+      alert(err.response?.data?.message || "Failed to upload post ❌");
     } finally {
       setLoading(false);
       setCaption("");
