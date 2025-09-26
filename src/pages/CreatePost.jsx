@@ -1,10 +1,10 @@
 import React, { useState } from "react";
-import axios from "axios";
 import { useUserContext } from "../context/UserContext";
+import { createPost } from "../api"; // use the API helper instead of raw axios
 import { useNavigate } from "react-router-dom";
 
 const CreatePost = () => {
-  const { posts, setPosts, backendURL } = useUserContext();
+  const { posts, setPosts } = useUserContext();
   const [caption, setCaption] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
@@ -21,25 +21,19 @@ const CreatePost = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!imageFile) return alert("Please select an image ❌");
+    if (!imageFile && !caption) return alert("Add an image or caption ❌");
     setLoading(true);
 
     try {
       const formData = new FormData();
-      formData.append("image", imageFile);
+      if (imageFile) formData.append("image", imageFile);
       formData.append("caption", caption);
 
-      const res = await axios.post(`${backendURL}/posts`, formData, {
-        withCredentials: true,
-      });
+      const res = await createPost(formData); // backend uploads to Cloudinary
 
-      if (res.data.post) { // ✅ backend me success field nahi, post object se check
-        const newPost = {
-          ...res.data.post,
-          image: res.data.post.image ? `${backendURL}${res.data.post.image}` : null,
-        };
-        setPosts([newPost, ...posts]); // Home feed update instantly
-        navigate("/"); // Post upload ke baad home page pe redirect
+      if (res.post) {
+        setPosts([res.post, ...posts]); // instantly add new post to feed
+        navigate("/"); // redirect to home after posting
       } else {
         alert("Post upload failed ❌");
       }

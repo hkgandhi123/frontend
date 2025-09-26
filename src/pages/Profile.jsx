@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useUserContext } from "../context/UserContext";
 import { AiOutlineHeart } from "react-icons/ai";
@@ -7,10 +7,12 @@ import { BsBookmark, BsChat, BsThreeDots } from "react-icons/bs";
 import axios from "axios";
 
 function Profile() {
-  const { user, posts, setPosts, backendURL, loading } = useUserContext();
+  const { user, posts, setPosts, backendURL, loading, startPrivateChat } = useUserContext();
   const [showMenu, setShowMenu] = useState(null);
   const [editingPost, setEditingPost] = useState(null);
   const [newCaption, setNewCaption] = useState("");
+  const [modalType, setModalType] = useState(null); // 'followers' or 'following'
+  const [usersList, setUsersList] = useState([]);
 
   if (loading)
     return (
@@ -26,20 +28,34 @@ function Profile() {
       </p>
     );
 
+  // 🔹 Fetch users for modal
+  const openUserModal = async (type) => {
+    setModalType(type);
+    try {
+      const ids = type === "followers" ? user.followers : user.following;
+      const res = await axios.post(`${backendURL}/users/get-by-ids`, { ids }, { withCredentials: true });
+      setUsersList(res.data);
+    } catch (err) {
+      console.error("Fetch users error:", err);
+      setUsersList([]);
+    }
+  };
+
+  const closeModal = () => {
+    setModalType(null);
+    setUsersList([]);
+  };
+
   // 🔹 Delete Post
   const handleDeletePost = async (postId) => {
     if (!window.confirm("Are you sure you want to delete this post?")) return;
     try {
-      await axios.delete(`${backendURL}/posts/${postId}`, {
-        withCredentials: true,
-      });
+      await axios.delete(`${backendURL}/posts/${postId}`, { withCredentials: true });
       setPosts((prev) => prev.filter((p) => p._id !== postId));
       alert("Post deleted ✅");
     } catch (err) {
       console.error("Delete post error:", err.response || err);
-      alert(
-        err.response?.data?.message || "Failed to delete post ❌. Try again!"
-      );
+      alert(err.response?.data?.message || "Failed to delete post ❌");
     }
   };
 
@@ -87,15 +103,25 @@ function Profile() {
             </Link>
           </div>
 
-          <div className="flex space-x-8 mt-4 text-sm md:text-base">
-            <div>
-              <span className="font-semibold">{posts.length}</span> posts
+          {/* Followers / Following / Posts responsive */}
+          <div className="flex flex-wrap gap-4 mt-4 text-center md:text-left">
+            <div className="flex-1 min-w-[80px] bg-gray-100 rounded-lg p-3">
+              <p className="font-semibold text-sm md:text-base">{posts.length}</p>
+              <p className="text-xs md:text-sm text-gray-600">Posts</p>
             </div>
-            <div>
-              <span className="font-semibold">10.5k</span> followers
+            <div
+              className="flex-1 min-w-[80px] bg-gray-100 rounded-lg p-3 cursor-pointer"
+              onClick={() => openUserModal("followers")}
+            >
+              <p className="font-semibold text-sm md:text-base">{user.followers?.length || 0}</p>
+              <p className="text-xs md:text-sm text-gray-600">Followers</p>
             </div>
-            <div>
-              <span className="font-semibold">350</span> following
+            <div
+              className="flex-1 min-w-[80px] bg-gray-100 rounded-lg p-3 cursor-pointer"
+              onClick={() => openUserModal("following")}
+            >
+              <p className="font-semibold text-sm md:text-base">{user.following?.length || 0}</p>
+              <p className="text-xs md:text-sm text-gray-600">Following</p>
             </div>
           </div>
 
@@ -241,6 +267,40 @@ function Profile() {
                 Save
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Followers / Following Modal */}
+      {modalType && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white w-80 max-h-[80vh] p-4 rounded-lg overflow-y-auto">
+            <h2 className="text-lg font-semibold mb-4">
+              {modalType === "followers" ? "Followers" : "Following"}
+            </h2>
+            {usersList.length === 0 ? (
+              <p className="text-gray-500 text-center">No users found</p>
+            ) : (
+              usersList.map((u) => (
+                <div
+                  key={u._id}
+                  className="flex items-center justify-between p-2 hover:bg-gray-100 rounded cursor-pointer"
+                  onClick={() => {
+                    startPrivateChat(u._id, u.username);
+                    closeModal();
+                  }}
+                >
+                  <span>{u.username}</span>
+                  <button className="text-blue-500 text-sm">Chat</button>
+                </div>
+              ))
+            )}
+            <button
+              onClick={closeModal}
+              className="mt-3 w-full py-2 bg-gray-200 rounded-md hover:bg-gray-300"
+            >
+              Close
+            </button>
           </div>
         </div>
       )}

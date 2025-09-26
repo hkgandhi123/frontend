@@ -1,97 +1,87 @@
+// src/components/CreatePostModal.jsx
 import React, { useState } from "react";
 import axios from "axios";
 import { useUserContext } from "../context/UserContext";
 
-const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
-  const { backendURL } = useUserContext();
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
+const CreatePostModal = ({ isOpen, onClose }) => {
+  const { posts, setPosts, backendURL, user } = useUserContext();
+  const [imageFile, setImageFile] = useState(null);
+  const [caption, setCaption] = useState("");
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
 
   const handleFileChange = (e) => {
-    const selected = e.target.files[0];
-    if (!selected) return;
-    setFile(selected);
-    setPreview(URL.createObjectURL(selected));
+    const file = e.target.files[0];
+    if (!file) return;
+    setImageFile(file);
   };
 
   const handleUpload = async () => {
-    if (!file) return alert("Select an image/video first ❌");
-    setLoading(true);
+    if (!imageFile) return alert("Select an image first!");
 
+    setLoading(true);
     try {
       const formData = new FormData();
-      formData.append("media", file);
+      formData.append("image", imageFile);
+      formData.append("caption", caption);
 
-      const res = await axios.post(`${backendURL}/stories`, formData, {
+      const res = await axios.post(`${backendURL}/posts`, formData, {
         withCredentials: true,
-        headers: { "Content-Type": "multipart/form-data" },
       });
 
-      if (res.data.success) {
-        alert("Story uploaded ✅");
-        onStoryCreated(); // Refresh stories
-        onClose(); // Close modal
-      } else {
-        alert("Failed to upload story ❌");
-      }
+      // ✅ Nayi post ko Cloudinary URL ke saath feed me add karna
+      const newPost = {
+        ...res.data.post,
+        image: res.data.post.image.startsWith("http")
+          ? res.data.post.image
+          : `${backendURL}${res.data.post.image}`,
+        user: {
+          ...res.data.post.user,
+          profilePic: res.data.post.user.profilePic
+            ? res.data.post.user.profilePic.startsWith("http")
+              ? res.data.post.user.profilePic
+              : `${backendURL}${res.data.post.user.profilePic}`
+            : "/default-avatar.png",
+        },
+      };
+
+      setPosts([newPost, ...posts]);
+      onClose();
+      setCaption("");
+      setImageFile(null);
     } catch (err) {
-      console.error("Story upload error:", err);
-      alert("Error uploading story ❌");
+      console.error("❌ Post upload error:", err.response?.data || err.message);
+      alert("Failed to upload post!");
     } finally {
       setLoading(false);
-      setFile(null);
-      setPreview(null);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg shadow-lg p-6 w-80 sm:w-96">
-        <h2 className="text-lg font-bold mb-4 text-center">Create Story</h2>
-
-        <input
-          type="file"
-          accept="image/*,video/*"
-          onChange={handleFileChange}
-          className="mb-4 w-full"
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+      <div className="bg-white p-6 rounded-lg w-96">
+        <h2 className="text-xl font-semibold mb-4">Create Post</h2>
+        <input type="file" accept="image/*" onChange={handleFileChange} />
+        <textarea
+          placeholder="Write a caption..."
+          value={caption}
+          onChange={(e) => setCaption(e.target.value)}
+          className="border p-2 rounded w-full mt-2 resize-none"
         />
-
-        {preview && (
-          <div className="mb-4">
-            {file.type.startsWith("video") ? (
-              <video
-                src={preview}
-                className="w-full h-48 object-cover rounded"
-                controls
-              />
-            ) : (
-              <img
-                src={preview}
-                alt="Preview"
-                className="w-full h-48 object-cover rounded"
-              />
-            )}
-          </div>
-        )}
-
-        <div className="flex justify-between">
+        <div className="flex justify-end space-x-2 mt-4">
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+            className="px-4 py-2 border rounded hover:bg-gray-100"
           >
-            Close
+            Cancel
           </button>
           <button
             onClick={handleUpload}
             disabled={loading}
-            className={`px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ${
-              loading ? "opacity-50 cursor-not-allowed" : ""
-            }`}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
           >
-            {loading ? "Uploading..." : "Upload"}
+            {loading ? "Uploading..." : "Post"}
           </button>
         </div>
       </div>
@@ -99,4 +89,4 @@ const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
   );
 };
 
-export default CreateStoryModal;
+export default CreatePostModal;
