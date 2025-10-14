@@ -31,7 +31,7 @@ const PostCard = ({ post, onDelete }) => {
             onClick={() => onDelete(post._id)}
             className="ml-auto text-red-500 hover:text-red-700"
           >
-            Delete
+            :
           </button>
         )}
       </div>
