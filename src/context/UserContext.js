@@ -1,116 +1,111 @@
-// src/context/UserContext.jsx
-// src/context/UserContext.js
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
-import { getPosts, getStories, getProfile, login, signup, resolveURL } from "../api";
+import { createContext, useContext, useEffect, useState } from "react";
+import { getMyProfile, login, signup, logout, resolveURL } from "../api";
 
 const UserContext = createContext();
 export const useUserContext = () => useContext(UserContext);
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [posts, setPosts] = useState([]);
-  const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [newPostGlobal, setNewPostGlobal] = useState(null);
 
-  const backendURL = process.env.REACT_APP_API_URL || "https://bkc-dt1n.onrender.com";
-
-  // ====================== FETCH POSTS ======================
-  const fetchPosts = useCallback(async () => {
+  // ✅ Fetch logged-in user
+  const fetchUser = async () => {
+    setLoading(true);
     try {
-      const data = await getPosts();
-      const updatedPosts = data.map((p) => ({
-        ...p,
-        image: resolveURL(p.image),
-        user: {
-          ...p.user,
-          profilePic: resolveURL(p.user?.profilePic),
-        },
-      }));
-      setPosts(updatedPosts);
+      const data = await getMyProfile();
+      setUser(data.user || data);
     } catch (err) {
-      console.error("❌ Fetch posts error:", err.response?.data || err.message);
-    }
-  }, []);
-
-  // ====================== FETCH STORIES ======================
-  const fetchAllStories = useCallback(async () => {
-    try {
-      const data = await getStories();
-      const updatedStories = data.map((s) => ({
-        ...s,
-        media: resolveURL(s.image),
-        user: {
-          ...s.user,
-          profilePic: resolveURL(s.user?.profilePic),
-        },
-      }));
-      setStories(updatedStories);
-    } catch (err) {
-      console.error("❌ Fetch stories error:", err.message);
-    }
-  }, []);
-
-  // ====================== FETCH PROFILE ======================
-  const fetchProfile = useCallback(async () => {
-    try {
-      const profile = await getProfile();
-      setUser({
-        ...profile,
-        profilePic: resolveURL(profile?.profilePic),
-      });
-    } catch (err) {
-      console.error("❌ Fetch profile error:", err.response?.data || err.message);
       setUser(null);
     } finally {
       setLoading(false);
     }
+  };
+
+  useEffect(() => {
+    fetchUser();
   }, []);
 
-  // ====================== AUTH ======================
-  const handleLogin = async (credentials) => {
+  // ✅ Login
+  const handleLogin = async ({ email, password }) => {
     try {
-      const data = await login(credentials);
-      setUser({ ...data.user, profilePic: resolveURL(data.user?.profilePic) });
-      return { success: true };
+      const data = await login({ email, password });
+      setUser(data.user || data);
+      return { success: true, user: data.user || data };
     } catch (err) {
-      console.error("❌ Login error:", err.response?.data || err.message);
-      return { success: false, message: err.response?.data?.message || err.message };
+      return { success: false, message: err.response?.data?.message || "Login failed ❌" };
     }
   };
 
-  const handleSignup = async (userData) => {
+  // ✅ Signup
+  const handleSignup = async ({ username, email, password }) => {
     try {
-      const data = await signup(userData);
-      setUser({ ...data.user, profilePic: resolveURL(data.user?.profilePic) });
-      return { success: true };
+      const data = await signup({ username, email, password });
+      setUser(data.user || data);
+      return { success: true, user: data.user || data };
     } catch (err) {
-      console.error("❌ Signup error:", err.response?.data || err.message);
-      return { success: false, message: err.response?.data?.message || err.message };
+      return { success: false, message: err.response?.data?.message || "Signup failed ❌" };
     }
   };
 
-  // ====================== INITIAL LOAD ======================
-  useEffect(() => {
-    fetchProfile();
-    fetchPosts();
-    fetchAllStories();
-  }, [fetchProfile, fetchPosts, fetchAllStories]);
+  // ✅ Logout
+  const handleLogout = async () => {
+    try {
+      await logout();
+      setUser(null);
+      setNewPostGlobal(null);
+    } catch (err) {
+      console.error("Logout failed", err.response?.data);
+    }
+  };
+
+  // ✅ Add new post globally
+  const addNewPost = (newPost, type = "post") => {
+    const normalized = {
+      ...newPost,
+      type,
+      image: newPost.image.startsWith("http") ? newPost.image : resolveURL(newPost.image),
+      user: {
+        ...newPost.user,
+        profilePic: newPost.user?.profilePic
+          ? resolveURL(newPost.user.profilePic) + `?t=${Date.now()}` // cache-busting
+          : "/default-avatar.png",
+      },
+    };
+
+    setUser((prev) => ({
+      ...prev,
+      posts: type === "post" ? [normalized, ...(prev.posts || [])] : prev.posts,
+      reels: type === "reel" ? [normalized, ...(prev.reels || [])] : prev.reels,
+    }));
+
+    setNewPostGlobal(normalized);
+  };
+
+  // ✅ Update user context (e.g., after profile edit)
+  const updateUserContext = (updatedUser) => {
+    setUser({
+      ...updatedUser,
+      profilePic: updatedUser.profilePic
+        ? resolveURL(updatedUser.profilePic) + `?t=${Date.now()}`
+        : "/default-avatar.png",
+    });
+  };
 
   return (
     <UserContext.Provider
       value={{
         user,
         setUser,
-        posts,
-        setPosts,
-        stories,
-        setStories,
+        updateUserContext,
         loading,
-        backendURL,
-        fetchPosts,
-        fetchAllStories,
+        isAuthenticated: !!user?._id,
+        fetchUser,
         handleLogin,
         handleSignup,
+        handleLogout,
+        addNewPost,
+        newPostGlobal,
       }}
     >
       {children}

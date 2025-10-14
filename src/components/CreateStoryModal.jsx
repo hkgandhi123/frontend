@@ -1,11 +1,8 @@
-// src/components/CreatePostModal.jsx
 import React, { useState } from "react";
-import axios from "axios";
-import { useUserContext } from "../context/UserContext";
+import { createStory } from "../api";
 
-const CreatePostModal = ({ isOpen, onClose }) => {
-  const { posts, setPosts, backendURL, user } = useUserContext();
-  const [imageFile, setImageFile] = useState(null);
+const CreateStoryModal = ({ isOpen, onClose, onStoryCreated }) => {
+  const [media, setMedia] = useState(null);
   const [caption, setCaption] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -14,79 +11,51 @@ const CreatePostModal = ({ isOpen, onClose }) => {
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setImageFile(file);
+    if (!file.type.startsWith("image") && !file.type.startsWith("video")) return alert("Only images or videos are allowed!");
+    setMedia(file);
   };
 
-  const handleUpload = async () => {
-    if (!imageFile) return alert("Select an image first!");
-
-    setLoading(true);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!media && !caption) return alert("Add image/video or text!");
     try {
-      const formData = new FormData();
-      formData.append("image", imageFile);
-      formData.append("caption", caption);
-
-      const res = await axios.post(`${backendURL}/posts`, formData, {
-        withCredentials: true,
-      });
-
-      // ✅ Nayi post ko Cloudinary URL ke saath feed me add karna
-      const newPost = {
-        ...res.data.post,
-        image: res.data.post.image.startsWith("http")
-          ? res.data.post.image
-          : `${backendURL}${res.data.post.image}`,
-        user: {
-          ...res.data.post.user,
-          profilePic: res.data.post.user.profilePic
-            ? res.data.post.user.profilePic.startsWith("http")
-              ? res.data.post.user.profilePic
-              : `${backendURL}${res.data.post.user.profilePic}`
-            : "/default-avatar.png",
-        },
-      };
-
-      setPosts([newPost, ...posts]);
-      onClose();
+      setLoading(true);
+      await createStory({ media, caption });
+      alert("✅ Story uploaded!");
+      setMedia(null);
       setCaption("");
-      setImageFile(null);
+      onClose();
+      onStoryCreated?.();
     } catch (err) {
-      console.error("❌ Post upload error:", err.response?.data || err.message);
-      alert("Failed to upload post!");
+      console.error("Story upload error:", err.response?.data || err.message);
+      alert(err.response?.data?.message || "❌ Failed to upload story");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-white p-6 rounded-lg w-96">
-        <h2 className="text-xl font-semibold mb-4">Create Post</h2>
-        <input type="file" accept="image/*" onChange={handleFileChange} />
-        <textarea
-          placeholder="Write a caption..."
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          className="border p-2 rounded w-full mt-2 resize-none"
-        />
-        <div className="flex justify-end space-x-2 mt-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 border rounded hover:bg-gray-100"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleUpload}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50"
-          >
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+      <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg w-full max-w-md flex flex-col space-y-4">
+        <h2 className="text-lg font-semibold">Create Story</h2>
+        <input type="file" accept="image/*,video/*" onChange={handleFileChange} />
+        {media && (
+          <div className="mt-2">
+            <p className="text-sm">Selected: {media.name}</p>
+            {media.type.startsWith("image") && <img src={URL.createObjectURL(media)} alt="preview" className="w-32 h-32 object-cover rounded" />}
+            {media.type.startsWith("video") && <video src={URL.createObjectURL(media)} className="w-32 h-32 rounded" controls />}
+          </div>
+        )}
+        <input type="text" placeholder="Caption..." value={caption} onChange={(e) => setCaption(e.target.value)} className="border p-2 rounded" />
+        <div className="flex justify-end space-x-2">
+          <button type="button" onClick={onClose} className="px-4 py-2 border rounded hover:bg-gray-100">Cancel</button>
+          <button type="submit" disabled={loading} className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-50">
             {loading ? "Uploading..." : "Post"}
           </button>
         </div>
-      </div>
+      </form>
     </div>
   );
 };
 
-export default CreatePostModal;
+export default CreateStoryModal;

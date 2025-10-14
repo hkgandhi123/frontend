@@ -1,96 +1,180 @@
-// src/api.js
 import axios from "axios";
 
-export const backendURL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+export const backendURL =
+  process.env.REACT_APP_API_URL || "https://bkc-dt1n.onrender.com";
 
-// Axios instance
+// Axios instance with credentials
 const api = axios.create({
   baseURL: backendURL,
-  withCredentials: true,
+  withCredentials: true, // ✅ send cookies for auth
 });
 
-/* ------------------ Helpers ------------------ */
-export const resolveURL = (path) => {
-  if (!path) return "/default-avatar.png";
-  return path.startsWith("http") ? path : `${backendURL}${path}`;
-};
+/* ------------------ Auth ------------------ */
 
-/* ------------------ AUTH ------------------ */
-export const signup = async (data) => (await api.post("/auth/signup", data)).data;
-export const login = async (data) => (await api.post("/auth/login", data)).data;
-export const getProfile = async () => (await api.get("/auth/profile")).data;
-export const logout = async () => (await api.post("/auth/logout")).data;
-
-export const updateProfile = async (profileData) => {
-  const formData = new FormData();
-  if (profileData.username) formData.append("username", profileData.username);
-  if (profileData.bio) formData.append("bio", profileData.bio);
-  if (profileData.profilePic) formData.append("profilePic", profileData.profilePic);
-
-  const res = await api.put("/auth/profile", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-  });
-  return res.data;
-};
-
-/* ------------------ POSTS ------------------ */
-export const getPosts = async () => {
+// ✅ Signup
+export const signup = async (data) => {
   try {
-    const res = await api.get("/posts", { headers: { "Cache-Control": "no-store" } });
+    const res = await api.post("/auth/signup", data);
     return res.data;
   } catch (err) {
-    console.error("❌ Error fetching posts:", err.response?.data || err.message);
+    console.error("signup error:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
+// ✅ Login
+export const login = async (data) => {
+  try {
+    const res = await api.post("/auth/login", data);
+    return res.data;
+  } catch (err) {
+    console.error("login error:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
+// ✅ Logout
+export const logout = async () => {
+  try {
+    const res = await api.post("/auth/logout");
+    return res.data;
+  } catch (err) {
+    console.error("logout error:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
+// ✅ Get logged-in user's profile (from /profile/me)
+export const getMyProfile = async () => {
+  try {
+    const res = await api.get("/profile/me"); // ✅ fixed route
+    return res.data.user || res.data || {};
+  } catch (err) {
+    console.error("getMyProfile error:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
+// ✅ Update logged-in user's profile (from /auth/update-profile)
+export const updateProfile = async (formData) => {
+  try {
+    const res = await api.put("/auth/update-profile", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  } catch (err) {
+    console.error("updateProfile error:", err.response?.data || err.message);
+    throw err;
+  }
+};
+
+/* ------------------ Public Profiles ------------------ */
+
+// ✅ Get any user's public profile by ID
+export const getProfile = async (id) => {
+  try {
+    const res = await api.get(`/profile/${id}`);
+    return res.data.user || res.data || {};
+  } catch (err) {
+    console.error(`getProfile error for id=${id}:`, err.response?.data || err.message);
+    throw err;
+  }
+};
+
+// ✅ Follow / Unfollow User
+export const followUser = async (id) => {
+  try {
+    const res = await api.post(`/profile/${id}/follow`);
+    return res.data;
+  } catch (err) {
+    console.error(`followUser error for id=${id}:`, err.response?.data || err.message);
+    throw err;
+  }
+};
+
+export const unfollowUser = async (id) => {
+  try {
+    const res = await api.post(`/profile/${id}/unfollow`);
+    return res.data;
+  } catch (err) {
+    console.error(`unfollowUser error for id=${id}:`, err.response?.data || err.message);
+    throw err;
+  }
+};
+
+/* ------------------ Posts ------------------ */
+
+export const getPosts = async () => {
+  try {
+    const res = await api.get("/posts");
+    return Array.isArray(res.data) ? res.data : res.data?.posts || [];
+  } catch (err) {
+    console.error("getPosts error:", err.response?.data || err.message);
     return [];
   }
 };
 
-// ✅ Create post with mandatory image
-export const createPost = async (data) => {
-  if (!data.image) throw new Error("Image is required");
-
+export const deletePost = async (id) => {
   try {
-    const formData = new FormData();
-    formData.append("image", data.image); // must be "image"
-    if (data.caption) formData.append("caption", data.caption);
+    const res = await api.delete(`/posts/${id}`);
+    return res.data;
+  } catch (err) {
+    console.error(`deletePost error for id=${id}:`, err.response?.data || err.message);
+    throw err;
+  }
+};
 
+export const createPost = async (formData) => {
+  try {
     const res = await api.post("/posts", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data;
   } catch (err) {
-    console.error("❌ Error creating post:", err.response?.data || err.message);
+    console.error("createPost error:", err.response?.data || err.message);
     throw err;
   }
 };
 
-// Delete post
-export const deletePost = async (id) => (await api.delete(`/posts/${id}`)).data;
+/* ------------------ Stories ------------------ */
 
-/* ------------------ STORIES ------------------ */
 export const getStories = async () => {
   try {
     const res = await api.get("/stories");
-    return res.data.stories || [];
+    return Array.isArray(res.data) ? res.data : res.data?.stories || [];
   } catch (err) {
-    console.error("❌ Error fetching stories:", err.response?.data || err.message);
+    console.error("getStories error:", err.response?.data || err.message);
     return [];
   }
 };
 
-export const createStory = async (data) => {
-  if (!data.image) throw new Error("Image is required for story");
-
+export const createStory = async (formData) => {
   try {
-    const formData = new FormData();
-    formData.append("image", data.image);
-    if (data.caption) formData.append("caption", data.caption);
-
     const res = await api.post("/stories", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     return res.data;
   } catch (err) {
-    console.error("❌ Error creating story:", err.response?.data || err.message);
+    console.error("createStory error:", err.response?.data || err.message);
     throw err;
+  }
+};
+
+/* ------------------ Helpers ------------------ */
+
+export const resolveURL = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  return `${backendURL}${url.startsWith("/") ? "" : "/"}${url}`;
+};
+
+// 🔍 Search users
+export const searchUsers = async (query) => {
+  try {
+    const res = await api.get(`/users/search?q=${query}`);
+    return res.data;
+  } catch (err) {
+    console.error("Search error:", err);
+    return [];
   }
 };

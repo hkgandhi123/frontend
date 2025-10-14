@@ -1,3 +1,4 @@
+// src/components/StoryViewerModal.jsx
 import React, { useEffect, useState, useRef } from "react";
 import { AiOutlineClose, AiOutlineHeart, AiFillHeart } from "react-icons/ai";
 import { BsChatDots } from "react-icons/bs";
@@ -6,20 +7,31 @@ const StoryViewerModal = ({ story, onClose }) => {
   const [liked, setLiked] = useState(false);
   const [progress, setProgress] = useState(0);
   const progressRef = useRef(null);
+  const videoRef = useRef(null);
 
-  // Auto progress bar
   useEffect(() => {
     setProgress(0);
+
+    // Auto close after 5s for image, video duration for video
+    const duration =
+      story.type === "video"
+        ? videoRef.current?.duration * 1000 || 5000
+        : 5000;
+
+    const intervalTime = 50;
+    const increment = (intervalTime / duration) * 100;
+
     progressRef.current = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
           clearInterval(progressRef.current);
-          onClose(); // Close after story ends
+          onClose();
           return 100;
         }
-        return prev + 1;
+        return prev + increment;
       });
-    }, 50); // 5 seconds per story
+    }, intervalTime);
+
     return () => clearInterval(progressRef.current);
   }, [story, onClose]);
 
@@ -43,12 +55,17 @@ const StoryViewerModal = ({ story, onClose }) => {
 
       {/* Story Content */}
       <div className="flex-1 flex justify-center items-center w-full p-4">
-        {story.media?.endsWith(".mp4") ? (
+        {story.type === "video" ? (
           <video
+            ref={videoRef}
             src={story.media}
             autoPlay
             muted
             className="max-h-[80vh] max-w-full object-contain rounded"
+            onLoadedMetadata={() => {
+              // Reset progress when video metadata loads
+              setProgress(0);
+            }}
           />
         ) : (
           <img

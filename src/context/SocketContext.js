@@ -8,23 +8,22 @@ export const SocketProvider = ({ children, user }) => {
   const [socket, setSocket] = useState(null);
 
   useEffect(() => {
-    if (user?._id) {
-      const s = io("https://bkc-dt1n.onrender.com", {
-        withCredentials: true,
-      });
+    if (!user?._id) return;
 
-      // Apna userId join karo
-      s.emit("join", { userId: user._id });
+    const s = io("https://bkc-dt1n.onrender.com", {
+      withCredentials: true,
+    });
 
-      setSocket(s);
+    s.emit("join", { userId: user._id });
+    console.log("✅ Socket connected");
 
-      return () => s.disconnect();
-    }
+    setSocket(s);
+
+    return () => {
+      s.disconnect();
+      setSocket(null);
+    };
   }, [user]);
 
-  return (
-    <SocketContext.Provider value={socket}>
-      {children}
-    </SocketContext.Provider>
-  );
+  return <SocketContext.Provider value={socket}>{children}</SocketContext.Provider>;
 };

@@ -1,70 +1,52 @@
-import React, { useState } from "react";
-import axios from "axios";
-import { useUserContext } from "../context/UserContext";
+import React from "react";
+import { useNavigate } from "react-router-dom";
+import { resolveURL } from "../api";
 
 const PostCard = ({ post, onDelete }) => {
-  const { user, backendURL } = useUserContext();
-  const [menuOpen, setMenuOpen] = useState(false);
+  const navigate = useNavigate();
 
-  const handleDelete = async () => {
-    try {
-      await axios.delete(`${backendURL}/posts/${post._id}`, {
-        withCredentials: true,
-      });
-      onDelete(post._id); // remove from frontend
-    } catch (err) {
-      console.error("Error deleting post:", err);
-    }
+  const handleProfileClick = () => {
+    navigate(`/profile/${post.user._id}`);
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 relative">
-      {/* Post Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <img
-            src={post.user?.profilePic || "/default.png"}
-            alt="profile"
-            className="w-8 h-8 rounded-full"
-          />
-          <span className="font-semibold">{post.user?.username}</span>
-        </div>
+    <div className="bg-white rounded-lg shadow p-4">
+      {/* User info */}
+      <div className="flex items-center mb-3">
+        <img
+          src={post.user?.profilePic ? resolveURL(post.user.profilePic) : "/default-avatar.png"}
+          alt={post.user?.username || "User"}
+          className="w-10 h-10 rounded-full object-cover mr-3 cursor-pointer"
+          onClick={handleProfileClick}
+        />
+        <span
+          className="font-medium cursor-pointer"
+          onClick={handleProfileClick}
+        >
+          {post.user?.username || "User"}
+        </span>
 
-        {/* 3 Dots Menu */}
-        {user?._id === post.user?._id && (
-          <div className="relative">
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="p-1 text-gray-600 hover:text-black"
-            >
-              ⋮
-            </button>
-
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-md">
-                <button
-                  onClick={handleDelete}
-                  className="block w-full text-left px-3 py-2 text-red-600 hover:bg-gray-100"
-                >
-                  Delete
-                </button>
-              </div>
-            )}
-          </div>
+        {onDelete && (
+          <button
+            onClick={() => onDelete(post._id)}
+            className="ml-auto text-red-500 hover:text-red-700"
+          >
+            Delete
+          </button>
         )}
       </div>
 
-      {/* Post Caption */}
-      <p className="mt-2">{post.caption}</p>
-
-      {/* Post Image */}
+      {/* Post image */}
       {post.image && (
         <img
-          src={post.image}
-          alt="post"
-          className="mt-2 rounded-lg w-full max-h-80 object-cover"
+          src={post.image.startsWith("http") ? post.image : resolveURL(post.image)}
+          alt={post.caption || "Post"}
+          className="w-full max-h-96 object-cover rounded mb-3"
         />
       )}
+
+      {/* Caption */}
+      {post.caption && <p className="text-gray-700">{post.caption}</p>}
     </div>
   );
 };

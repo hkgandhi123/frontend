@@ -1,56 +1,55 @@
 import React, { useState } from "react";
-import { login } from "../api";
 import { useUserContext } from "../context/UserContext";
 import { useNavigate, Link } from "react-router-dom";
 
 const Login = () => {
-  const { setUser } = useUserContext();
+  const { handleLogin } = useUserContext();
   const navigate = useNavigate();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  const onSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      const data = await login({ email, password });
-      if (data.success) {
-        setUser(data.user);
-        navigate("/profile");
-      }
-    } catch (err) {
-      alert(err.response?.data?.message || "Login failed");
-    } finally {
-      setLoading(false);
-    }
+    setError("");
+    const res = await handleLogin({ email, password });
+    if (res.success) navigate("/"); // login success → home
+    else setError(res.message);
   };
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <form onSubmit={handleSubmit} className="flex flex-col space-y-2 w-80 p-4 border rounded">
-        <h2 className="text-xl font-bold text-center">Login</h2>
+    <div className="flex justify-center items-center h-screen bg-gray-50">
+      <form onSubmit={onSubmit} className="bg-white p-8 rounded shadow-md w-96 space-y-4">
+        <h2 className="text-2xl font-semibold text-center">Login</h2>
+        {error && <p className="text-red-500 text-sm">{error}</p>}
+
         <input
           type="email"
           placeholder="Email"
           value={email}
-          onChange={e => setEmail(e.target.value)}
+          onChange={(e) => setEmail(e.target.value)}
           required
-          className="p-2 border rounded"
+          className="w-full p-2 border rounded"
         />
         <input
           type="password"
           placeholder="Password"
           value={password}
-          onChange={e => setPassword(e.target.value)}
+          onChange={(e) => setPassword(e.target.value)}
           required
-          className="p-2 border rounded"
+          className="w-full p-2 border rounded"
         />
-        <button type="submit" disabled={loading} className="p-2 bg-blue-500 text-white rounded">
-          {loading ? "Logging in..." : "Login"}
+
+        <button type="submit" className="w-full bg-blue-500 text-white py-2 rounded hover:bg-blue-600 transition">
+          Login
         </button>
+
         <p className="text-sm text-center">
-          Don't have an account? <Link to="/signup" className="text-blue-500">Sign up</Link>
+          Don't have an account?{" "}
+          <Link to="/signup" className="text-blue-500">
+            Sign Up
+          </Link>
         </p>
       </form>
     </div>
