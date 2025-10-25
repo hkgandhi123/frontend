@@ -10,15 +10,15 @@ import CreatePost from "./pages/CreatePost";
 import Search from "./pages/Search";
 import Reels from "./pages/Reels";
 import EditProfile from "./pages/EditProfile";
-import Messages from "./pages/Messages";
 import ProtectedRoute from "./components/ProtectedRoute";
+import Messages from "./pages/Messages";
 
 function App() {
   return (
     <UserProvider>
       <Router>
         <Routes>
-          {/* Protected pages */}
+          {/* ✅ Protected pages */}
           <Route
             path="/"
             element={
@@ -76,12 +76,12 @@ function App() {
             }
           />
 
-          {/* Public pages */}
+          {/* ✅ Public pages */}
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
         </Routes>
 
-        {/* BottomNav always visible for logged-in users */}
+        {/* ✅ Bottom navigation (visible after login) */}
         <BottomNav />
       </Router>
     </UserProvider>

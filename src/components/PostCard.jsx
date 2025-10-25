@@ -7,18 +7,19 @@ import {
   MessageCircle,
   Share2,
 } from "lucide-react";
+import { resolveURL } from "../api";
 
-const PostCard = ({ post }) => {
+const PostCard = ({ post, onDelete }) => {
   const navigate = useNavigate();
   const [votes, setVotes] = useState(post?.votes || 0);
   const [hasVoted, setHasVoted] = useState(null);
   const [isFollowing, setIsFollowing] = useState(false);
   const [views, setViews] = useState(post?.views || 0);
 
-  // 👁️ Increase views when post is first loaded
+  // 👁️ Increase views when post is loaded
   useEffect(() => {
     setViews((prev) => prev + 1);
-    // Optional backend call:
+    // Optional: send view to backend
     // fetch(`/api/posts/${post._id}/view`, { method: "POST" });
   }, [post?._id]);
 
@@ -40,19 +41,13 @@ const PostCard = ({ post }) => {
 
   const handleFollow = () => {
     setIsFollowing((prev) => !prev);
-    // Optionally call API to follow/unfollow user
+    // Optionally call API to follow/unfollow
   };
 
-  // 💬 Go to comment section / page
   const handleComments = () => {
-    if (post?._id) {
-      navigate(`/post/${post._id}/comments`);
-    } else {
-      alert("Post not found!");
-    }
+    if (post?._id) navigate(`/post/${post._id}/comments`);
   };
 
-  // 📤 Share post link (copies URL)
   const handleShare = async () => {
     const postUrl = `${window.location.origin}/post/${post?._id}`;
     try {
@@ -66,7 +61,6 @@ const PostCard = ({ post }) => {
   return (
     <div className="bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-700 p-[1px] rounded-2xl shadow-lg max-w-screen-md mx-auto my-6">
       <div className="bg-gray-100 rounded-2xl p-5 relative overflow-hidden">
-
         {/* Left-side vote arrows */}
         <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center text-yellow-400 h-full justify-center space-y-5">
           <ArrowUpIcon
@@ -93,7 +87,11 @@ const PostCard = ({ post }) => {
             onClick={goToProfile}
           >
             <img
-              src={post?.user?.profilePic || "https://via.placeholder.com/50"}
+              src={
+                post?.user?.profilePic
+                  ? resolveURL(post.user.profilePic)
+                  : "https://via.placeholder.com/50"
+              }
               alt={post?.user?.username || "User"}
               className="w-10 h-10 rounded-full border object-cover"
             />
@@ -120,20 +118,20 @@ const PostCard = ({ post }) => {
           </button>
         </div>
 
-        {/* Post Content (Thought + Image) */}
+        {/* Post Content */}
         <div className="ml-8 mt-3">
-          {/* Thought text */}
+          {/* Caption / Content */}
           {post?.content && (
             <p className="text-gray-800 text-base font-medium mb-3 leading-relaxed">
               {post.content}
             </p>
           )}
 
-          {/* Optional Post Image */}
+          {/* Post Image */}
           {post?.image && (
             <div className="w-full rounded-xl overflow-hidden border border-gray-200">
               <img
-                src={post.image}
+                src={post.image.startsWith("http") ? post.image : resolveURL(post.image)}
                 alt="Post"
                 className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
               />
@@ -149,7 +147,7 @@ const PostCard = ({ post }) => {
             <span className="font-semibold">{views}</span>
           </div>
 
-          {/* Share + Comment */}
+          {/* Share + Comments */}
           <div className="flex items-center space-x-3">
             <Share2
               size={18}

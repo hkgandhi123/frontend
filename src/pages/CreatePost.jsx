@@ -9,7 +9,7 @@ const CreatePost = ({ onClose, type = "post" }) => {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Preview image
+  // Handle file selection & preview
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -17,26 +17,19 @@ const CreatePost = ({ onClose, type = "post" }) => {
     setPreview(URL.createObjectURL(file));
   };
 
-  // Submit post
+  // Submit post to backend
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (!imageFile) {
-      alert("Please select an image first ❌");
-      return;
-    }
+    if (!imageFile) return alert("Please select an image first ❌");
 
     setLoading(true);
     try {
       const formData = new FormData();
-      formData.append("image", imageFile); // ✅ must match backend field name
+      formData.append("image", imageFile); // must match backend field
       formData.append("caption", caption);
       formData.append("type", type);
 
-      // Call backend API
       const res = await createPost(formData);
-
-      // Backend should return { post: {...} }
       if (!res?.post) throw new Error("Post creation failed");
 
       // Resolve URLs for frontend display
@@ -52,7 +45,7 @@ const CreatePost = ({ onClose, type = "post" }) => {
         },
       };
 
-      // Update global state
+      // Add new post globally (Home/Profile)
       addNewPost(newPost, type);
 
       // Reset form
@@ -61,7 +54,7 @@ const CreatePost = ({ onClose, type = "post" }) => {
       setPreview(null);
       onClose?.();
     } catch (err) {
-      console.error("❌ Post upload error:", err.response?.data || err.message);
+      console.error("❌ Post upload error:", err.response?.data || err.message || err);
       alert(err.response?.data?.message || err.message || "Upload failed ❌");
     } finally {
       setLoading(false);
@@ -82,7 +75,7 @@ const CreatePost = ({ onClose, type = "post" }) => {
         className="border p-2 rounded"
       />
 
-      {/* Image Preview */}
+      {/* Preview Image */}
       {preview && (
         <img
           src={preview}
@@ -91,7 +84,7 @@ const CreatePost = ({ onClose, type = "post" }) => {
         />
       )}
 
-      {/* Caption Input */}
+      {/* Caption */}
       <textarea
         placeholder="Write your thought..."
         value={caption}

@@ -18,7 +18,6 @@ const Home = () => {
   const [posts, setPosts] = useState([]);
   const [stories, setStories] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [showPostModal, setShowPostModal] = useState(false);
   const [showStoryModal, setShowStoryModal] = useState(false);
   const [selectedStory, setSelectedStory] = useState(null);
@@ -79,7 +78,7 @@ const Home = () => {
   const handleNewPost = (newPost) => {
     const normalized = normalizePosts([newPost])[0];
     setPosts((prev) => [normalized, ...prev]);
-    setNewPostGlobal(normalized);
+    setNewPostGlobal(normalized); // update global state
   };
 
   // Resolve profile pic
@@ -99,7 +98,7 @@ const Home = () => {
 
       {/* Stories */}
       <div className="flex space-x-4 p-3 overflow-x-auto border-b bg-white">
-        {/* Add Your Story */}
+        {/* Add your own story */}
         <div
           className="flex flex-col items-center cursor-pointer"
           onClick={() => setShowStoryModal(true)}
@@ -114,7 +113,7 @@ const Home = () => {
           stories
             .filter((s) => s.user?._id && s.user._id !== user?._id)
             .map((story) => (
-              <div key={story._id} className="flex flex-col items-center">
+              <div key={story._id} className="flex flex-col items-center relative">
                 <div
                   className="w-16 h-16 p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 rounded-full cursor-pointer"
                   onClick={() => setSelectedStory(story)}
@@ -142,9 +141,7 @@ const Home = () => {
         ) : posts.length === 0 ? (
           <p className="text-center mt-10">No posts yet</p>
         ) : (
-          posts.map((post) => (
-            <PostCard key={post._id} post={post} onDelete={handleDeletePost} />
-          ))
+          posts.map((post) => <PostCard key={post._id} post={post} onDelete={handleDeletePost} />)
         )}
       </div>
 
@@ -156,7 +153,10 @@ const Home = () => {
         />
       )}
       {showStoryModal && (
-        <CreateStoryModal onClose={() => setShowStoryModal(false)} onStoryCreated={fetchStories} />
+        <CreateStoryModal
+          onClose={() => setShowStoryModal(false)}
+          onStoryCreated={fetchStories}
+        />
       )}
       {selectedStory && (
         <StoryViewerModal story={selectedStory} onClose={() => setSelectedStory(null)} />
