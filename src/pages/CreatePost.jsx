@@ -1,19 +1,15 @@
-// src/components/CreatePost.jsx
 import React, { useState } from "react";
+import { createPost, resolveURL } from "../api";
 import { useUserContext } from "../context/UserContext";
-import { createPost } from "../api";
-import { useNavigate } from "react-router-dom";
 
-const CreatePost = () => {
-  const { posts, setPosts } = useUserContext();
+const CreatePost = ({ onClose, type = "post" }) => {
+  const { addNewPost } = useUserContext();
   const [caption, setCaption] = useState("");
   const [imageFile, setImageFile] = useState(null);
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  const navigate = useNavigate();
-
-  // ✅ File selection + preview
+  // Preview image
   const handleFileChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
@@ -21,79 +17,99 @@ const CreatePost = () => {
     setPreview(URL.createObjectURL(file));
   };
 
-  // ✅ Form submit
+  // Submit post
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!imageFile) return alert("Image is required ❌"); // mandatory image
+    if (!imageFile) {
+      alert("Please select an image first ❌");
+      return;
+    }
 
     setLoading(true);
-
     try {
       const formData = new FormData();
-      formData.append("image", imageFile);
+      formData.append("image", imageFile); // ✅ must match backend field name
       formData.append("caption", caption);
+      formData.append("type", type);
 
-      const res = await createPost({ image: imageFile, caption });
+      // Call backend API
+      const res = await createPost(formData);
 
-      if (res.post) {
-        setPosts([res.post, ...posts]); // instantly add to feed
-        navigate("/"); // redirect to home
-      } else {
-        alert("Post upload failed ❌");
-      }
-    } catch (err) {
-      console.error("Post upload error:", err);
-      alert(err.response?.data?.message || "Failed to upload post ❌");
-    } finally {
-      setLoading(false);
+      // Backend should return { post: {...} }
+      if (!res?.post) throw new Error("Post creation failed");
+
+      // Resolve URLs for frontend display
+      const newPost = {
+        ...res.post,
+        type,
+        image: resolveURL(res.post.image),
+        user: {
+          ...res.post.user,
+          profilePic: res.post.user?.profilePic
+            ? resolveURL(res.post.user.profilePic)
+            : "/default-avatar.png",
+        },
+      };
+
+      // Update global state
+      addNewPost(newPost, type);
+
+      // Reset form
       setCaption("");
       setImageFile(null);
       setPreview(null);
+      onClose?.();
+    } catch (err) {
+      console.error("❌ Post upload error:", err.response?.data || err.message);
+      alert(err.response?.data?.message || err.message || "Upload failed ❌");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <div className="flex justify-center mt-10">
-      <form
-        onSubmit={handleSubmit}
-        className="flex flex-col w-11/12 sm:w-96 p-4 border rounded shadow"
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <h2 className="text-xl font-semibold text-center">
+        Create {type === "reel" ? "Reel" : "Post"}
+      </h2>
+
+      {/* Image Input */}
+      <input
+        type="file"
+        accept="image/*"
+        onChange={handleFileChange}
+        className="border p-2 rounded"
+      />
+
+      {/* Image Preview */}
+      {preview && (
+        <img
+          src={preview}
+          alt="Preview"
+          className="w-full h-48 object-cover rounded"
+        />
+      )}
+
+      {/* Caption Input */}
+      <textarea
+        placeholder="Write your thought..."
+        value={caption}
+        onChange={(e) => setCaption(e.target.value)}
+        className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none"
+      />
+
+      {/* Submit Button */}
+      <button
+        type="submit"
+        disabled={loading}
+        className={`px-4 py-2 rounded text-white font-medium ${
+          loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
+        }`}
       >
-        <h2 className="text-xl font-semibold mb-4 text-center">Create Post</h2>
-
-        <input
-          type="file"
-          accept="image/*"
-          onChange={handleFileChange}
-          className="mb-3"
-        />
-
-        {preview && (
-          <img
-            src={preview}
-            alt="Preview"
-            className="w-full h-48 object-cover rounded mb-3"
-          />
-        )}
-
-        <textarea
-          placeholder="Write a caption..."
-          value={caption}
-          onChange={(e) => setCaption(e.target.value)}
-          className="border p-2 rounded focus:outline-none focus:ring-2 focus:ring-blue-400 resize-none mb-3"
-        />
-
-        <button
-          type="submit"
-          disabled={loading}
-          className={`px-4 py-2 rounded text-white font-medium ${
-            loading ? "bg-gray-400 cursor-not-allowed" : "bg-blue-500 hover:bg-blue-600"
-          }`}
-        >
-          {loading ? "Posting..." : "Post"}
-        </button>
-      </form>
-    </div>
+        {loading ? "Posting..." : "Post"}
+      </button>
+    </form>
   );
 };
 

@@ -1,70 +1,171 @@
-import React, { useState } from "react";
-import axios from "axios";
-import { useUserContext } from "../context/UserContext";
+import React, { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  EyeIcon,
+  ArrowUpIcon,
+  ArrowDownIcon,
+  MessageCircle,
+  Share2,
+} from "lucide-react";
 
-const PostCard = ({ post, onDelete }) => {
-  const { user, backendURL } = useUserContext();
-  const [menuOpen, setMenuOpen] = useState(false);
+const PostCard = ({ post }) => {
+  const navigate = useNavigate();
+  const [votes, setVotes] = useState(post?.votes || 0);
+  const [hasVoted, setHasVoted] = useState(null);
+  const [isFollowing, setIsFollowing] = useState(false);
+  const [views, setViews] = useState(post?.views || 0);
 
-  const handleDelete = async () => {
+  // 👁️ Increase views when post is first loaded
+  useEffect(() => {
+    setViews((prev) => prev + 1);
+    // Optional backend call:
+    // fetch(`/api/posts/${post._id}/view`, { method: "POST" });
+  }, [post?._id]);
+
+  const handleUpvote = () => {
+    if (hasVoted === "up") return;
+    setVotes((prev) => prev + (hasVoted === "down" ? 2 : 1));
+    setHasVoted("up");
+  };
+
+  const handleDownvote = () => {
+    if (hasVoted === "down") return;
+    setVotes((prev) => prev - (hasVoted === "up" ? 2 : 1));
+    setHasVoted("down");
+  };
+
+  const goToProfile = () => {
+    if (post?.user?._id) navigate(`/profile/${post.user._id}`);
+  };
+
+  const handleFollow = () => {
+    setIsFollowing((prev) => !prev);
+    // Optionally call API to follow/unfollow user
+  };
+
+  // 💬 Go to comment section / page
+  const handleComments = () => {
+    if (post?._id) {
+      navigate(`/post/${post._id}/comments`);
+    } else {
+      alert("Post not found!");
+    }
+  };
+
+  // 📤 Share post link (copies URL)
+  const handleShare = async () => {
+    const postUrl = `${window.location.origin}/post/${post?._id}`;
     try {
-      await axios.delete(`${backendURL}/posts/${post._id}`, {
-        withCredentials: true,
-      });
-      onDelete(post._id); // remove from frontend
+      await navigator.clipboard.writeText(postUrl);
+      alert("📋 Post link copied to clipboard!");
     } catch (err) {
-      console.error("Error deleting post:", err);
+      alert("Failed to copy link!");
     }
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-md p-4 relative">
-      {/* Post Header */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center gap-2">
-          <img
-            src={post.user?.profilePic || "/default.png"}
-            alt="profile"
-            className="w-8 h-8 rounded-full"
+    <div className="bg-gradient-to-br from-indigo-900 via-blue-900 to-purple-700 p-[1px] rounded-2xl shadow-lg max-w-screen-md mx-auto my-6">
+      <div className="bg-gray-100 rounded-2xl p-5 relative overflow-hidden">
+
+        {/* Left-side vote arrows */}
+        <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center text-yellow-400 h-full justify-center space-y-5">
+          <ArrowUpIcon
+            size={36}
+            className={`cursor-pointer transform scale-y-[3] ${
+              hasVoted === "up" ? "text-green-500" : ""
+            }`}
+            onClick={handleUpvote}
           />
-          <span className="font-semibold">{post.user?.username}</span>
+          <span className="text-lg font-semibold">{votes}</span>
+          <ArrowDownIcon
+            size={36}
+            className={`cursor-pointer transform scale-y-[3] ${
+              hasVoted === "down" ? "text-red-500" : ""
+            }`}
+            onClick={handleDownvote}
+          />
         </div>
 
-        {/* 3 Dots Menu */}
-        {user?._id === post.user?._id && (
-          <div className="relative">
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="p-1 text-gray-600 hover:text-black"
-            >
-              ⋮
-            </button>
-
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 w-28 bg-white border rounded shadow-md">
-                <button
-                  onClick={handleDelete}
-                  className="block w-full text-left px-3 py-2 text-red-600 hover:bg-gray-100"
-                >
-                  Delete
-                </button>
-              </div>
-            )}
+        {/* Header */}
+        <div className="flex justify-between items-center mb-3 ml-8">
+          <div
+            className="flex items-center space-x-3 cursor-pointer"
+            onClick={goToProfile}
+          >
+            <img
+              src={post?.user?.profilePic || "https://via.placeholder.com/50"}
+              alt={post?.user?.username || "User"}
+              className="w-10 h-10 rounded-full border object-cover"
+            />
+            <div>
+              <h2 className="font-bold text-lg text-gray-800">
+                {post?.user?.username || "User"}
+              </h2>
+              <p className="text-xs text-gray-500">
+                {post?.user?.bio || "No bio"}
+              </p>
+            </div>
           </div>
-        )}
+
+          {/* Follow Button */}
+          <button
+            onClick={handleFollow}
+            className={`px-3 py-1 text-sm rounded-md border transition font-medium ${
+              isFollowing
+                ? "bg-blue-600 text-white border-blue-600 hover:bg-blue-700"
+                : "text-blue-600 border-blue-500 hover:bg-blue-600 hover:text-white"
+            }`}
+          >
+            {isFollowing ? "Following" : "Follow"}
+          </button>
+        </div>
+
+        {/* Post Content (Thought + Image) */}
+        <div className="ml-8 mt-3">
+          {/* Thought text */}
+          {post?.content && (
+            <p className="text-gray-800 text-base font-medium mb-3 leading-relaxed">
+              {post.content}
+            </p>
+          )}
+
+          {/* Optional Post Image */}
+          {post?.image && (
+            <div className="w-full rounded-xl overflow-hidden border border-gray-200">
+              <img
+                src={post.image}
+                alt="Post"
+                className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Bottom bar */}
+        <div className="flex justify-between items-center mt-3 ml-8 text-gray-700">
+          {/* Views */}
+          <div className="flex items-center space-x-1">
+            <EyeIcon size={18} />
+            <span className="font-semibold">{views}</span>
+          </div>
+
+          {/* Share + Comment */}
+          <div className="flex items-center space-x-3">
+            <Share2
+              size={18}
+              className="cursor-pointer hover:text-blue-600"
+              onClick={handleShare}
+            />
+            <div
+              className="flex items-center space-x-1 cursor-pointer hover:text-blue-600"
+              onClick={handleComments}
+            >
+              <MessageCircle size={18} />
+              <span className="font-semibold">{post?.comments || 0}</span>
+            </div>
+          </div>
+        </div>
       </div>
-
-      {/* Post Caption */}
-      <p className="mt-2">{post.caption}</p>
-
-      {/* Post Image */}
-      {post.image && (
-        <img
-          src={post.image}
-          alt="post"
-          className="mt-2 rounded-lg w-full max-h-80 object-cover"
-        />
-      )}
     </div>
   );
 };

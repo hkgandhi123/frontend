@@ -1,208 +1,171 @@
-// src/pages/Home.jsx
 import React, { useEffect, useState, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { useUserContext } from "../context/UserContext";
-import { getPosts, deletePost, getStories, resolveURL } from "../api";
+import { getPosts, getStories, resolveURL, deletePost } from "../api";
+
 import BottomNav from "../components/BottomNav";
 import CreatePostModal from "../components/CreatePostModal";
 import CreateStoryModal from "../components/CreateStoryModal";
 import StoryViewerModal from "../components/StoryViewerModal";
 import HomeHeader from "../components/HomeHeader";
-
-import { AiOutlineHeart } from "react-icons/ai";
-import { BsBookmark, BsChat, BsThreeDots } from "react-icons/bs";
-import { FiSend } from "react-icons/fi";
+import PostCard from "../components/PostCard";
 
 const Home = () => {
-  const { posts, setPosts, user } = useUserContext();
-  const [loadingPosts, setLoadingPosts] = useState(true);
-  const [modalOpen, setModalOpen] = useState(false);
-  const [storyModalOpen, setStoryModalOpen] = useState(false);
+  const { user, setNewPostGlobal } = useUserContext();
+  const navigate = useNavigate();
+
+  const [posts, setPosts] = useState([]);
   const [stories, setStories] = useState([]);
-  const [currentStory, setCurrentStory] = useState(null);
-  const [showMenu, setShowMenu] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  const resolveProfilePic = (url) => resolveURL(url);
+  const [showPostModal, setShowPostModal] = useState(false);
+  const [showStoryModal, setShowStoryModal] = useState(false);
+  const [selectedStory, setSelectedStory] = useState(null);
 
+  // Normalize posts for consistent URLs
+  const normalizePosts = (data) =>
+    data.map((p) => ({
+      ...p,
+      image: resolveURL(p.image),
+      user: {
+        ...p.user,
+        profilePic: p.user?.profilePic ? resolveURL(p.user.profilePic) : "/default-avatar.png",
+      },
+    }));
+
+  // Fetch posts
   const fetchPosts = useCallback(async () => {
-    setLoadingPosts(true);
     try {
+      setLoading(true);
       const data = await getPosts();
-      const updatedPosts = data.map((p) => ({
-        ...p,
-        user: { ...p.user, profilePic: resolveProfilePic(p.user?.profilePic) },
-        image: p.image ? resolveURL(p.image) : null,
-      }));
-      setPosts(updatedPosts);
+      setPosts(normalizePosts(data));
     } catch (err) {
-      console.error("❌ Fetch posts error:", err.response?.data || err.message);
+      console.error("Error fetching posts:", err);
+      setPosts([]);
     } finally {
-      setLoadingPosts(false);
+      setLoading(false);
     }
-  }, [setPosts]);
+  }, []);
 
-  const handleDeletePost = async (postId) => {
-    if (!window.confirm("Are you sure you want to delete this post?")) return;
+  // Fetch stories
+  const fetchStories = useCallback(async () => {
     try {
-      await deletePost(postId);
-      setPosts((prev) => prev.filter((p) => p._id !== postId));
-      alert("✅ Post deleted successfully");
+      const data = await getStories();
+      setStories(data);
     } catch (err) {
-      console.error("❌ Delete post error:", err.response?.data || err.message);
-      alert("❌ Failed to delete post");
-    }
-  };
-
-  const fetchAllStories = useCallback(async () => {
-    try {
-      const storiesData = await getStories();
-      const updatedStories = storiesData.map((s) => ({
-        ...s,
-        user: { ...s.user, profilePic: resolveProfilePic(s.user?.profilePic) },
-      }));
-      setStories(updatedStories);
-    } catch (err) {
-      console.error("❌ Fetch stories error:", err.message);
+      console.error("Error fetching stories:", err);
+      setStories([]);
     }
   }, []);
 
   useEffect(() => {
     fetchPosts();
-    fetchAllStories();
-  }, [fetchPosts, fetchAllStories]);
+    fetchStories();
+  }, [fetchPosts, fetchStories]);
+
+  // Delete post handler
+  const handleDeletePost = async (id) => {
+    try {
+      await deletePost(id);
+      setPosts((prev) => prev.filter((p) => p._id !== id));
+      setNewPostGlobal((prev) => (prev?._id === id ? null : prev));
+    } catch (err) {
+      console.error("Error deleting post:", err);
+    }
+  };
+
+  // Add new post
+  const handleNewPost = (newPost) => {
+    const normalized = normalizePosts([newPost])[0];
+    setPosts((prev) => [normalized, ...prev]);
+    setNewPostGlobal(normalized);
+  };
+
+  // Resolve profile pic
+  const resolveProfilePic = (pic) => (pic ? resolveURL(pic) : "/default-avatar.png");
 
   return (
-    <>
+    <div className="pb-20 bg-gray-50 min-h-screen">
       <Helmet>
-        <title>BKC_Home</title>
+        <title>HitBit</title>
       </Helmet>
 
-      <div className="min-h-screen bg-gray-50 relative">
-        {/* Header */}
-        <HomeHeader setModalOpen={setModalOpen} setStoryModalOpen={setStoryModalOpen} />
+      {/* Header */}
+      <HomeHeader
+        onAddPost={() => setShowPostModal(true)}
+        onAddStory={() => setShowStoryModal(true)}
+      />
 
-        {/* Stories */}
-        <div className="mt-14 py-2 border-b bg-white">
-          <div className="flex space-x-4 overflow-x-auto px-2 scrollbar-hide">
-            {/* Your Story */}
-            <div className="flex flex-col items-center cursor-pointer" onClick={() => setStoryModalOpen(true)}>
-              <div className="w-16 h-16 p-[2px] bg-gray-300 rounded-full relative">
-                <img
-                  src={resolveProfilePic(user?.profilePic)}
-                  alt="Your Story"
-                  className="w-full h-full rounded-full object-cover border-2 border-white"
-                />
-                <div className="absolute bottom-0 right-0 w-5 h-5 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white text-white font-bold text-sm">
-                  +
-                </div>
-              </div>
-              <span className="text-xs mt-1">Your Story</span>
-            </div>
-
-            {stories.map((story) => (
-              <div
-                key={story._id}
-                className="flex flex-col items-center cursor-pointer"
-                onClick={() => setCurrentStory(story)}
-              >
-                <div className="w-16 h-16 p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 rounded-full">
-                  <img
-                    src={resolveProfilePic(story.user?.profilePic)}
-                    alt={`${story.user?.username || "User"} story`}
-                    className="w-full h-full rounded-full object-cover border-2 border-white"
-                  />
-                </div>
-                <span className="text-xs mt-1">{story.user?.username || "User"}</span>
-              </div>
-            ))}
+      {/* Stories */}
+      <div className="flex space-x-4 p-3 overflow-x-auto border-b bg-white">
+        {/* Add Your Story */}
+        <div
+          className="flex flex-col items-center cursor-pointer"
+          onClick={() => setShowStoryModal(true)}
+        >
+          <div className="w-16 h-16 rounded-full border flex items-center justify-center bg-gray-200">
+            <span className="text-2xl">+</span>
           </div>
         </div>
 
-        {/* Story Viewer */}
-        {currentStory && <StoryViewerModal story={currentStory} onClose={() => setCurrentStory(null)} />}
-
-        {/* Posts Feed */}
-        <div className="pt-2 max-w-2xl mx-auto flex flex-col space-y-8 pb-20 sm:pb-28">
-          {loadingPosts ? (
-            <p className="text-center text-gray-500">Loading posts...</p>
-          ) : posts.length === 0 ? (
-            <p className="text-center text-gray-500">No posts yet.</p>
-          ) : (
-            posts.map((post) => (
-              <div key={post._id} className="bg-white border rounded-lg shadow-sm flex flex-col">
-                {/* Post Header */}
-                <div className="flex items-center justify-between p-3">
-                  <div className="flex items-center space-x-3">
-                    <img src={resolveProfilePic(post.user?.profilePic)} alt="Profile" className="w-9 h-9 rounded-full object-cover" />
-                    <span className="font-semibold text-sm">{post.user?.username || "User"}</span>
-                  </div>
-
-                  {post.user?._id?.toString() === user?._id?.toString() ? (
-                    <div className="relative">
-                      <button onClick={() => setShowMenu(showMenu === post._id ? null : post._id)} className="text-xl hover:opacity-70">
-                        <BsThreeDots />
-                      </button>
-                      {showMenu === post._id && (
-                        <div className="absolute right-0 mt-2 w-32 bg-white border rounded shadow-lg z-50">
-                          <button
-                            onClick={() => {
-                              handleDeletePost(post._id);
-                              setShowMenu(null);
-                            }}
-                            className="w-full text-left px-4 py-2 text-red-500 hover:bg-gray-100"
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                  ) : (
-                    <BsThreeDots className="text-xl hover:opacity-70" />
-                  )}
+        {/* Other users' stories */}
+        {Array.isArray(stories) &&
+          stories
+            .filter((s) => s.user?._id && s.user._id !== user?._id)
+            .map((story) => (
+              <div key={story._id} className="flex flex-col items-center">
+                <div
+                  className="w-16 h-16 p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 rounded-full cursor-pointer"
+                  onClick={() => setSelectedStory(story)}
+                >
+                  <img
+                    src={resolveProfilePic(story.user?.profilePic)}
+                    alt={story.user?.username || "User"}
+                    className="w-full h-full rounded-full object-cover border-2 border-white"
+                  />
                 </div>
-
-                {/* Post Image */}
-                {post.image && <img src={post.image} alt="Post" className="w-full object-cover" />}
-
-                {/* Post Actions */}
-                <div className="flex justify-between items-center px-3 py-2">
-                  <div className="flex space-x-4 text-2xl">
-                    <AiOutlineHeart className="hover:opacity-70" />
-                    <BsChat className="hover:opacity-70" />
-                    <FiSend className="hover:opacity-70" onClick={() => window.alert("Messages coming soon")} />
-                  </div>
-                  <BsBookmark className="text-2xl hover:opacity-70" />
-                </div>
-
-                {/* Post Caption */}
-                <div className="px-3 pb-3">
-                  <p className="font-semibold">{post.likes?.length || 0} likes</p>
-                  <p>
-                    <span className="font-semibold">{post.user?.username}</span> {post.caption}
-                  </p>
-                  <button className="text-gray-500 text-sm">View all comments</button>
-                  <div className="mt-2">
-                    <input type="text" placeholder="Add a comment..." className="w-full border-none focus:ring-0 text-sm" />
-                  </div>
-                </div>
+                <span
+                  className="text-xs mt-1 cursor-pointer"
+                  onClick={() => navigate(`/profile/${story.user._id}`)}
+                >
+                  {story.user?.username || "User"}
+                </span>
               </div>
-            ))
-          )}
-        </div>
-
-        {/* Bottom Nav (mobile responsive) */}
-        {user && <div className="fixed bottom-0 left-0 right-0 sm:hidden z-50"><BottomNav /></div>}
-
-
-        {/* Modals */}
-        {modalOpen && <CreatePostModal isOpen={modalOpen} onClose={() => setModalOpen(false)} onPostCreated={fetchPosts} />}
-        {storyModalOpen && <CreateStoryModal isOpen={storyModalOpen} onClose={() => setStoryModalOpen(false)} onStoryCreated={fetchAllStories} />}
+            ))}
       </div>
-    </>
+
+      {/* Posts */}
+      <div className="max-w-3xl mx-auto mt-4 flex flex-col space-y-6">
+        {loading ? (
+          <p className="text-center mt-10">Loading posts...</p>
+        ) : posts.length === 0 ? (
+          <p className="text-center mt-10">No posts yet</p>
+        ) : (
+          posts.map((post) => (
+            <PostCard key={post._id} post={post} onDelete={handleDeletePost} />
+          ))
+        )}
+      </div>
+
+      {/* Modals */}
+      {showPostModal && (
+        <CreatePostModal
+          onClose={() => setShowPostModal(false)}
+          onPostCreated={handleNewPost}
+        />
+      )}
+      {showStoryModal && (
+        <CreateStoryModal onClose={() => setShowStoryModal(false)} onStoryCreated={fetchStories} />
+      )}
+      {selectedStory && (
+        <StoryViewerModal story={selectedStory} onClose={() => setSelectedStory(null)} />
+      )}
+
+      {/* Bottom Navigation */}
+      <BottomNav />
+    </div>
   );
 };
 
 export default Home;
-
-
-

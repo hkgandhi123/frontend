@@ -4,7 +4,7 @@ import { updateProfile } from "../api";
 import { useNavigate } from "react-router-dom";
 
 const EditProfile = () => {
-  const { user, setUser } = useUserContext();
+  const { user, updateUserContext } = useUserContext();
   const [username, setUsername] = useState(user?.username || "");
   const [bio, setBio] = useState(user?.bio || "");
   const [profilePic, setProfilePic] = useState(null);
@@ -14,13 +14,21 @@ const EditProfile = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-
     try {
-      const data = await updateProfile({ username, bio, profilePic });
+      const formData = new FormData();
+      formData.append("username", username);
+      formData.append("bio", bio);
+      if (profilePic) formData.append("profilePic", profilePic);
+
+      const data = await updateProfile(formData);
+
       if (data.success) {
-        setUser(data.user);
+        updateUserContext({
+          ...data.user,
+          profilePic: data.user.profilePic + `?t=${Date.now()}`, // cache-busting
+        });
         alert("Profile updated successfully ✅");
-        navigate("/profile");
+        navigate("/profile/me");
       }
     } catch (err) {
       console.error("Profile update error:", err.response?.data || err.message);

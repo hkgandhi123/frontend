@@ -2,10 +2,10 @@
   "name": "frontend",
   "version": "0.1.0",
   "private": true,
-
-
   "dependencies": {
+    "@heroicons/react": "^2.2.0",
     "axios": "^1.12.2",
+    "lucide-react": "^0.546.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-helmet": "^6.1.0",
@@ -13,7 +13,6 @@
     "react-router-dom": "^7.8.2",
     "react-scripts": "5.0.1",
     "socket.io-client": "^4.8.1",
-    "tailwind-scrollbar-hide": "^4.0.0",
     "web-vitals": "^2.1.4"
   },
   "scripts": {
@@ -33,5 +32,10 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^3.4.18"
   }
 }
