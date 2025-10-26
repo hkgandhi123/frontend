@@ -7,7 +7,7 @@ import {
   MessageCircle,
   Share2,
 } from "lucide-react";
-import { resolveURL } from "../api";
+import { resolveURLWithCacheBust } from "../utils/resolveURL";
 
 const PostCard = ({ post, onDelete }) => {
   const navigate = useNavigate();
@@ -65,43 +65,28 @@ const PostCard = ({ post, onDelete }) => {
         <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col items-center text-yellow-400 h-full justify-center space-y-5">
           <ArrowUpIcon
             size={36}
-            className={`cursor-pointer transform scale-y-[3] ${
-              hasVoted === "up" ? "text-green-500" : ""
-            }`}
+            className={`cursor-pointer transform scale-y-[3] ${hasVoted === "up" ? "text-green-500" : ""}`}
             onClick={handleUpvote}
           />
           <span className="text-lg font-semibold">{votes}</span>
           <ArrowDownIcon
             size={36}
-            className={`cursor-pointer transform scale-y-[3] ${
-              hasVoted === "down" ? "text-red-500" : ""
-            }`}
+            className={`cursor-pointer transform scale-y-[3] ${hasVoted === "down" ? "text-red-500" : ""}`}
             onClick={handleDownvote}
           />
         </div>
 
         {/* Header */}
         <div className="flex justify-between items-center mb-3 ml-8">
-          <div
-            className="flex items-center space-x-3 cursor-pointer"
-            onClick={goToProfile}
-          >
+          <div className="flex items-center space-x-3 cursor-pointer" onClick={goToProfile}>
             <img
-              src={
-                post?.user?.profilePic
-                  ? resolveURL(post.user.profilePic)
-                  : "https://via.placeholder.com/50"
-              }
+              src={post?.user?.profilePic ? resolveURLWithCacheBust(post.user.profilePic) : "https://via.placeholder.com/50"}
               alt={post?.user?.username || "User"}
               className="w-10 h-10 rounded-full border object-cover"
             />
             <div>
-              <h2 className="font-bold text-lg text-gray-800">
-                {post?.user?.username || "User"}
-              </h2>
-              <p className="text-xs text-gray-500">
-                {post?.user?.bio || "No bio"}
-              </p>
+              <h2 className="font-bold text-lg text-gray-800">{post?.user?.username || "User"}</h2>
+              <p className="text-xs text-gray-500">{post?.user?.bio || "No bio"}</p>
             </div>
           </div>
 
@@ -120,18 +105,13 @@ const PostCard = ({ post, onDelete }) => {
 
         {/* Post Content */}
         <div className="ml-8 mt-3">
-          {/* Caption / Content */}
           {post?.content && (
-            <p className="text-gray-800 text-base font-medium mb-3 leading-relaxed">
-              {post.content}
-            </p>
+            <p className="text-gray-800 text-base font-medium mb-3 leading-relaxed">{post.content}</p>
           )}
-
-          {/* Post Image */}
           {post?.image && (
             <div className="w-full rounded-xl overflow-hidden border border-gray-200">
               <img
-                src={post.image.startsWith("http") ? post.image : resolveURL(post.image)}
+                src={resolveURLWithCacheBust(post.image)}
                 alt="Post"
                 className="w-full h-64 object-cover hover:scale-105 transition-transform duration-300"
               />
@@ -149,15 +129,8 @@ const PostCard = ({ post, onDelete }) => {
 
           {/* Share + Comments */}
           <div className="flex items-center space-x-3">
-            <Share2
-              size={18}
-              className="cursor-pointer hover:text-blue-600"
-              onClick={handleShare}
-            />
-            <div
-              className="flex items-center space-x-1 cursor-pointer hover:text-blue-600"
-              onClick={handleComments}
-            >
+            <Share2 size={18} className="cursor-pointer hover:text-blue-600" onClick={handleShare} />
+            <div className="flex items-center space-x-1 cursor-pointer hover:text-blue-600" onClick={handleComments}>
               <MessageCircle size={18} />
               <span className="font-semibold">{post?.comments || 0}</span>
             </div>

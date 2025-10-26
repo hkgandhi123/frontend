@@ -2,12 +2,11 @@ import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { FaHome, FaSearch, FaPlusSquare, FaVideo } from "react-icons/fa";
 import { useUserContext } from "../context/UserContext";
-import { resolveURL } from "../utils/resolveURL";
+import { resolveURLWithCacheBust } from "../utils/resolveURL";
 
 const BottomNav = () => {
   const { user } = useUserContext();
   const navigate = useNavigate();
-
   if (!user) return null;
 
   const links = [
@@ -17,13 +16,11 @@ const BottomNav = () => {
     { to: "/reels", icon: <FaVideo size={24} />, label: "Reels" },
   ];
 
-  const getProfilePic = () => {
-    if (!user.profilePic) return "/default-avatar.png";
-    return resolveURL(user.profilePic) + `?t=${Date.now()}`;
-  };
+  const getProfilePic = () => resolveURLWithCacheBust(user.profilePic);
 
   return (
     <>
+      {/* Mobile */}
       <div className="fixed bottom-0 left-0 w-full flex justify-around items-center border-t bg-white py-3 sm:hidden z-50">
         {links.map((link) => (
           <NavLink
@@ -37,7 +34,6 @@ const BottomNav = () => {
             {link.icon}
           </NavLink>
         ))}
-
         <div
           onClick={() => navigate("/profile/me")}
           className="flex flex-col items-center cursor-pointer"
@@ -50,6 +46,7 @@ const BottomNav = () => {
         </div>
       </div>
 
+      {/* Desktop */}
       <div className="hidden sm:flex fixed bottom-0 left-0 w-full justify-center border-t bg-white py-3 z-50">
         <div className="flex items-center space-x-10">
           {links.map((link) => (
@@ -64,17 +61,15 @@ const BottomNav = () => {
               {link.icon}
             </NavLink>
           ))}
-
           <div
             onClick={() => navigate("/profile/me")}
             className="flex flex-col items-center cursor-pointer"
           >
             <img
-  src={resolveURL(user.profilePic)}
-  alt={user.username || "Profile"}
-  className="w-6 h-6 rounded-full object-cover border"
-/>
-
+              src={getProfilePic()}
+              alt={user.username || "Profile"}
+              className="w-6 h-6 rounded-full object-cover border"
+            />
           </div>
         </div>
       </div>

@@ -8,8 +8,15 @@ const EditProfile = () => {
   const [username, setUsername] = useState(user?.username || "");
   const [bio, setBio] = useState(user?.bio || "");
   const [profilePic, setProfilePic] = useState(null);
+  const [preview, setPreview] = useState(user?.profilePic || null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    setProfilePic(file);
+    if (file) setPreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -25,7 +32,7 @@ const EditProfile = () => {
       if (data.success) {
         updateUserContext({
           ...data.user,
-          profilePic: data.user.profilePic + `?t=${Date.now()}`, // cache-busting
+          profilePic: data.user.profilePic + `?t=${Date.now()}`,
         });
         alert("Profile updated successfully ✅");
         navigate("/profile/me");
@@ -42,6 +49,18 @@ const EditProfile = () => {
     <div className="max-w-md mx-auto mt-10 p-4 bg-white rounded shadow">
       <h2 className="text-xl font-bold mb-4">Edit Profile</h2>
       <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
+        {preview && (
+          <img
+            src={preview}
+            alt="Profile Preview"
+            className="w-24 h-24 rounded-full object-cover mb-2 border"
+          />
+        )}
+        <input
+          type="file"
+          accept="image/*"
+          onChange={handleFileChange}
+        />
         <input
           type="text"
           value={username}
@@ -54,11 +73,6 @@ const EditProfile = () => {
           onChange={(e) => setBio(e.target.value)}
           placeholder="Bio"
           className="border p-2 rounded"
-        />
-        <input
-          type="file"
-          accept="image/*"
-          onChange={(e) => setProfilePic(e.target.files[0])}
         />
         <button
           type="submit"
