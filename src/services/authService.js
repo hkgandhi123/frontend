@@ -14,25 +14,25 @@ const API = axios.create({
 
 // 🔹 Signup
 export const signup = async (formData) => {
-  const { data } = await API.post("/auth/signup", formData);
+  const { data } = await API.post("/signup", formData);
   return data;
 };
 
 // 🔹 Login
 export const login = async (formData) => {
-  const { data } = await API.post("/auth/login", formData);
+  const { data } = await API.post("/login", formData);
   return data;
 };
 
 // 🔹 Logout
 export const logout = async () => {
-  const { data } = await API.post("/auth/logout");
+  const { data } = await API.post("/logout");
   return data;
 };
 
 // 🔹 Get logged-in user profile
 export const getProfile = async () => {
-  const { data } = await API.get("/auth/profile");
+  const { data } = await API.get("/profile");
   return data;
 };
 
@@ -44,7 +44,7 @@ export const updateProfile = async (profileData) => {
   if (profileData.bio) formData.append("bio", profileData.bio);
   if (profileData.profilePic) formData.append("profilePic", profileData.profilePic);
 
-  const { data } = await API.put("/auth/profile", formData, {
+  const { data } = await API.put("/profile", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 

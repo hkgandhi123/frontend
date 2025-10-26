@@ -9,11 +9,12 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [newPostGlobal, setNewPostGlobal] = useState(null);
 
-  // ✅ Fetch logged-in user
   const fetchUser = async () => {
     setLoading(true);
     try {
       const data = await getMyProfile();
+      if (data.profilePic)
+        data.profilePic = resolveURL(data.profilePic) + `?t=${Date.now()}`;
       setUser(data.user || data);
     } catch (err) {
       setUser(null);
@@ -26,10 +27,21 @@ export const UserProvider = ({ children }) => {
     fetchUser();
   }, []);
 
-  // ✅ Login
+  // Update global user state (profilePic included)
+  const updateUserContext = (updatedUser) => {
+    setUser({
+      ...updatedUser,
+      profilePic: updatedUser.profilePic
+        ? resolveURL(updatedUser.profilePic) + `?t=${Date.now()}`
+        : "/default-avatar.png",
+    });
+  };
+
   const handleLogin = async ({ email, password }) => {
     try {
       const data = await login({ email, password });
+      if (data.user?.profilePic)
+        data.user.profilePic = resolveURL(data.user.profilePic) + `?t=${Date.now()}`;
       setUser(data.user || data);
       return { success: true, user: data.user || data };
     } catch (err) {
@@ -37,10 +49,11 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // ✅ Signup
   const handleSignup = async ({ username, email, password }) => {
     try {
       const data = await signup({ username, email, password });
+      if (data.user?.profilePic)
+        data.user.profilePic = resolveURL(data.user.profilePic) + `?t=${Date.now()}`;
       setUser(data.user || data);
       return { success: true, user: data.user || data };
     } catch (err) {
@@ -48,7 +61,6 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // ✅ Logout
   const handleLogout = async () => {
     try {
       await logout();
@@ -59,7 +71,6 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  // ✅ Add new post globally
   const addNewPost = (newPost, type = "post") => {
     const normalized = {
       ...newPost,
@@ -68,7 +79,7 @@ export const UserProvider = ({ children }) => {
       user: {
         ...newPost.user,
         profilePic: newPost.user?.profilePic
-          ? resolveURL(newPost.user.profilePic) + `?t=${Date.now()}` // cache-busting
+          ? resolveURL(newPost.user.profilePic) + `?t=${Date.now()}`
           : "/default-avatar.png",
       },
     };
@@ -80,16 +91,6 @@ export const UserProvider = ({ children }) => {
     }));
 
     setNewPostGlobal(normalized);
-  };
-
-  // ✅ Update user context (e.g., after profile edit)
-  const updateUserContext = (updatedUser) => {
-    setUser({
-      ...updatedUser,
-      profilePic: updatedUser.profilePic
-        ? resolveURL(updatedUser.profilePic) + `?t=${Date.now()}`
-        : "/default-avatar.png",
-    });
   };
 
   return (

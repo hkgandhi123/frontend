@@ -1,34 +1,59 @@
-// src/pages/Upload.jsx
 import React, { useState } from "react";
+import { createPost } from "../api";
+import { useUserContext } from "../context/UserContext";
 
 const Upload = () => {
-  const [media, setMedia] = useState(null);
+  const { addNewPost } = useUserContext();
+
+  const [mediaFile, setMediaFile] = useState(null);
+  const [preview, setPreview] = useState(null);
   const [type, setType] = useState("post"); // 'post' or 'reel'
   const [caption, setCaption] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // Media select handler
+  // Handle file selection
   const handleMediaChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      setMedia(URL.createObjectURL(file)); // Preview
+      setMediaFile(file);
+      setPreview(URL.createObjectURL(file)); // Preview locally
     }
   };
 
-  const handleUpload = () => {
-    if (!media) {
-      alert("Please select an image or video!");
-      return;
+  // Upload post
+  const handleUpload = async () => {
+    if (!mediaFile) return alert("Please select an image or video!");
+
+    setLoading(true);
+    try {
+      const formData = new FormData();
+      formData.append("caption", caption);
+      formData.append("file", mediaFile);
+      formData.append("type", type);
+
+      const post = await createPost(formData);
+
+      // Add new post globally (UserContext)
+      addNewPost(post, type);
+
+      // Reset
+      setCaption("");
+      setMediaFile(null);
+      setPreview(null);
+      alert("Post uploaded successfully ✅");
+    } catch (err) {
+      console.error("Upload error:", err);
+      alert("Upload failed ❌");
+    } finally {
+      setLoading(false);
     }
-    // ✅ Here you can send 'media', 'type', 'caption' to backend API
-    console.log({ media, type, caption });
-    alert("Post uploaded! (Preview only, integrate backend to store)");
-    setMedia(null);
-    setCaption("");
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-100 p-4">
-      <h1 className="text-2xl font-bold mb-4">Upload {type === "post" ? "Post" : "Reel"}</h1>
+      <h1 className="text-2xl font-bold mb-4">
+        Upload {type === "post" ? "Post" : "Reel"}
+      </h1>
 
       {/* Type selector */}
       <div className="flex gap-4 mb-4">
@@ -59,12 +84,16 @@ const Upload = () => {
       />
 
       {/* Preview */}
-      {media && (
+      {preview && (
         <div className="mb-4">
           {type === "post" ? (
-            <img src={media} alt="preview" className="w-full max-h-96 object-contain" />
+            <img
+              src={preview}
+              alt="preview"
+              className="w-full max-h-96 object-contain"
+            />
           ) : (
-            <video controls src={media} className="w-full max-h-96" />
+            <video controls src={preview} className="w-full max-h-96" />
           )}
         </div>
       )}
@@ -80,9 +109,12 @@ const Upload = () => {
       {/* Upload button */}
       <button
         onClick={handleUpload}
-        className="px-4 py-2 bg-blue-500 text-white rounded"
+        disabled={loading}
+        className={`px-4 py-2 rounded text-white ${
+          loading ? "bg-gray-400" : "bg-blue-500"
+        }`}
       >
-        Upload
+        {loading ? "Uploading..." : "Upload"}
       </button>
     </div>
   );

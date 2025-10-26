@@ -10,12 +10,21 @@ const api = axios.create({
   withCredentials: true, // send cookies for auth
 });
 
+/* ------------------ HELPERS ------------------ */
+
+// ✅ Resolve full URL for images/files
+export const resolveURL = (url) => {
+  if (!url) return "";
+  if (url.startsWith("http")) return url;
+  return `${backendURL.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
+};
+
 /* ------------------ AUTH ------------------ */
 
 // ✅ Signup
 export const signup = async (data) => {
   try {
-    const res = await api.post("/auth/signup", data);
+    const res = await api.post("/signup", data);
     return res.data;
   } catch (err) {
     console.error("❌ signup error:", err.response?.data || err.message);
@@ -26,7 +35,7 @@ export const signup = async (data) => {
 // ✅ Login
 export const login = async (data) => {
   try {
-    const res = await api.post("/auth/login", data);
+    const res = await api.post("/login", data);
     return res.data;
   } catch (err) {
     console.error("❌ login error:", err.response?.data || err.message);
@@ -37,7 +46,7 @@ export const login = async (data) => {
 // ✅ Logout
 export const logout = async () => {
   try {
-    const res = await api.post("/auth/logout");
+    const res = await api.post("/logout");
     return res.data;
   } catch (err) {
     console.error("❌ logout error:", err.response?.data || err.message);
@@ -49,7 +58,9 @@ export const logout = async () => {
 export const getMyProfile = async () => {
   try {
     const res = await api.get("/profile/me");
-    return res.data.user || res.data || {};
+    const user = res.data.user || res.data || {};
+    if (user.profilePic) user.profilePic = resolveURL(user.profilePic);
+    return user;
   } catch (err) {
     console.error("❌ getMyProfile error:", err.response?.data || err.message);
     throw err;
@@ -59,10 +70,12 @@ export const getMyProfile = async () => {
 // ✅ Update logged-in user's profile
 export const updateProfile = async (formData) => {
   try {
-    const res = await api.put("/auth/update-profile", formData, {
+    const res = await api.put("/update-profile", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data;
+    const updatedUser = res.data.user || res.data;
+    if (updatedUser.profilePic) updatedUser.profilePic = resolveURL(updatedUser.profilePic);
+    return updatedUser;
   } catch (err) {
     console.error("❌ updateProfile error:", err.response?.data || err.message);
     throw err;
@@ -74,7 +87,9 @@ export const updateProfile = async (formData) => {
 export const getProfile = async (id) => {
   try {
     const res = await api.get(`/profile/${id}`);
-    return res.data.user || res.data || {};
+    const user = res.data.user || res.data || {};
+    if (user.profilePic) user.profilePic = resolveURL(user.profilePic);
+    return user;
   } catch (err) {
     console.error(`❌ getProfile error for id=${id}:`, err.response?.data || err.message);
     throw err;
@@ -106,7 +121,14 @@ export const unfollowUser = async (id) => {
 export const getPosts = async () => {
   try {
     const res = await api.get("/posts");
-    return Array.isArray(res.data) ? res.data : res.data?.posts || [];
+    const posts = Array.isArray(res.data) ? res.data : res.data?.posts || [];
+    return posts.map(post => ({
+      ...post,
+      image: post.image ? resolveURL(post.image) : null,
+      user: post.user
+        ? { ...post.user, profilePic: post.user.profilePic ? resolveURL(post.user.profilePic) : "/default-avatar.png" }
+        : {},
+    }));
   } catch (err) {
     console.error("❌ getPosts error:", err.response?.data || err.message);
     return [];
@@ -118,7 +140,10 @@ export const createPost = async (formData) => {
     const res = await api.post("/posts", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data;
+    const post = res.data;
+    if (post.image) post.image = resolveURL(post.image);
+    if (post.user?.profilePic) post.user.profilePic = resolveURL(post.user.profilePic);
+    return post;
   } catch (err) {
     console.error("❌ createPost error:", err.response?.data || err.message);
     throw err;
@@ -130,7 +155,10 @@ export const updatePost = async (id, formData) => {
     const res = await api.put(`/posts/${id}`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data;
+    const post = res.data;
+    if (post.image) post.image = resolveURL(post.image);
+    if (post.user?.profilePic) post.user.profilePic = resolveURL(post.user.profilePic);
+    return post;
   } catch (err) {
     console.error("❌ updatePost error:", err.response?.data || err.message);
     throw err;
@@ -152,7 +180,14 @@ export const deletePost = async (id) => {
 export const getStories = async () => {
   try {
     const res = await api.get("/stories");
-    return Array.isArray(res.data) ? res.data : res.data?.stories || [];
+    const stories = Array.isArray(res.data) ? res.data : res.data?.stories || [];
+    return stories.map(story => ({
+      ...story,
+      image: story.image ? resolveURL(story.image) : null,
+      user: story.user
+        ? { ...story.user, profilePic: story.user.profilePic ? resolveURL(story.user.profilePic) : "/default-avatar.png" }
+        : {},
+    }));
   } catch (err) {
     console.error("❌ getStories error:", err.response?.data || err.message);
     return [];
@@ -164,7 +199,10 @@ export const createStory = async (formData) => {
     const res = await api.post("/stories", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    return res.data;
+    const story = res.data;
+    if (story.image) story.image = resolveURL(story.image);
+    if (story.user?.profilePic) story.user.profilePic = resolveURL(story.user.profilePic);
+    return story;
   } catch (err) {
     console.error("❌ createStory error:", err.response?.data || err.message);
     throw err;
@@ -176,17 +214,13 @@ export const createStory = async (formData) => {
 export const searchUsers = async (query) => {
   try {
     const res = await api.get(`/users/search?q=${query}`);
-    return res.data || [];
+    const users = res.data || [];
+    return users.map(u => ({
+      ...u,
+      profilePic: u.profilePic ? resolveURL(u.profilePic) : "/default-avatar.png",
+    }));
   } catch (err) {
     console.error("❌ searchUsers error:", err.response?.data || err.message);
     return [];
   }
-};
-
-/* ------------------ HELPERS ------------------ */
-
-export const resolveURL = (url) => {
-  if (!url) return "";
-  if (url.startsWith("http")) return url;
-  return `${backendURL.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
 };

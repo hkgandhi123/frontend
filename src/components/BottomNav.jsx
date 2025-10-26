@@ -2,6 +2,7 @@ import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { FaHome, FaSearch, FaPlusSquare, FaVideo } from "react-icons/fa";
 import { useUserContext } from "../context/UserContext";
+import { resolveURL } from "../utils/resolveURL";
 
 const BottomNav = () => {
   const { user } = useUserContext();
@@ -16,9 +17,13 @@ const BottomNav = () => {
     { to: "/reels", icon: <FaVideo size={24} />, label: "Reels" },
   ];
 
+  const getProfilePic = () => {
+    if (!user.profilePic) return "/default-avatar.png";
+    return resolveURL(user.profilePic) + `?t=${Date.now()}`;
+  };
+
   return (
     <>
-      {/* Mobile */}
       <div className="fixed bottom-0 left-0 w-full flex justify-around items-center border-t bg-white py-3 sm:hidden z-50">
         {links.map((link) => (
           <NavLink
@@ -38,14 +43,13 @@ const BottomNav = () => {
           className="flex flex-col items-center cursor-pointer"
         >
           <img
-            src={user.profilePic || "/default-avatar.png"}
+            src={getProfilePic()}
             alt={user.username || "Profile"}
             className="w-6 h-6 rounded-full object-cover border"
           />
         </div>
       </div>
 
-      {/* Desktop */}
       <div className="hidden sm:flex fixed bottom-0 left-0 w-full justify-center border-t bg-white py-3 z-50">
         <div className="flex items-center space-x-10">
           {links.map((link) => (
@@ -66,10 +70,11 @@ const BottomNav = () => {
             className="flex flex-col items-center cursor-pointer"
           >
             <img
-              src={user.profilePic || "/default-avatar.png"}
-              alt={user.username || "Profile"}
-              className="w-8 h-8 rounded-full object-cover border"
-            />
+  src={resolveURL(user.profilePic)}
+  alt={user.username || "Profile"}
+  className="w-6 h-6 rounded-full object-cover border"
+/>
+
           </div>
         </div>
       </div>
