@@ -1,10 +1,19 @@
-export const resolveURL = (url) => {
-  if (!url) return "";
-  if (/^https?:\/\//i.test(url)) return url;
-  const base = process.env.REACT_APP_API_URL || "https://bkc-dt1n.onrender.com";
-  return `${base}/${url.replace(/^\//, "")}`;
-};
+// utils/resolveURL.js
+export const resolveURLWithCacheBust = (url) => {
+  if (!url) return "/default-avatar.png";
 
-// Use this for images that need cache-busting
-export const resolveURLWithCacheBust = (url) =>
-  url ? resolveURL(url) + `?t=${Date.now()}` : "/default-avatar.png";
+  // Skip blob: and data:
+  if (url.startsWith("blob:") || url.startsWith("data:")) return url;
+
+  try {
+    // Remove any existing ?t= timestamps
+    const cleanUrl = url.replace(/(\?|&)t=\d+/g, "");
+
+    // Add timestamp (forces Cloudinary/Firebase to refresh cache)
+    const separator = cleanUrl.includes("?") ? "&" : "?";
+    return `${cleanUrl}${separator}t=${Date.now()}`;
+  } catch (err) {
+    console.error("resolveURL error:", err);
+    return url;
+  }
+};

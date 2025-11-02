@@ -1,16 +1,16 @@
 import axios from "axios";
 
-// 🔹 Base URL setup
+// 🌐 Base URL setup (Local or Render)
 const API = axios.create({
-  baseURL: process.env.REACT_APP_API_URL
-    ? process.env.REACT_APP_API_URL
-    : window.location.hostname === "localhost"
+  baseURL:
+    process.env.REACT_APP_API_URL ||
+    (window.location.hostname === "localhost"
       ? "http://localhost:5000"
-      : "https://bkc-dt1n.onrender.com",
-  withCredentials: true, // ✅ Cookie automatically send hogi
+      : "https://bkc-dt1n.onrender.com"),
+  withCredentials: true, // ✅ Cookies automatically send honge
 });
 
-// ========== AUTH ==========
+// ================= AUTH =================
 
 // 🔹 Signup
 export const signup = async (formData) => {
@@ -31,8 +31,8 @@ export const logout = async () => {
 };
 
 // 🔹 Get logged-in user profile
-export const getProfile = async () => {
-  const { data } = await API.get("/profile");
+export const getMyProfile = async () => {
+  const { data } = await API.get("/profile/me");
   return data;
 };
 
@@ -40,28 +40,30 @@ export const getProfile = async () => {
 export const updateProfile = async (profileData) => {
   const formData = new FormData();
 
-  if (profileData.username) formData.append("username", profileData.username);
+  if (profileData.username)
+    formData.append("username", profileData.username);
   if (profileData.bio) formData.append("bio", profileData.bio);
-  if (profileData.profilePic) formData.append("profilePic", profileData.profilePic);
+  if (profileData.profilePic)
+    formData.append("profilePic", profileData.profilePic);
 
-  const { data } = await API.put("/profile", formData, {
+  const { data } = await API.put("/profile/me/update", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 
   return data;
 };
 
-// 🔹 Check authentication status
+// 🔹 Check authentication status ✅ (Fixed)
 export const isAuthenticated = async () => {
   try {
-    await getProfile();
+    await getMyProfile(); // ✅ correct function name (was getProfile)
     return true;
   } catch {
     return false;
   }
 };
 
-// ========== POSTS ==========
+// ================= POSTS =================
 
 // 🔹 Get all posts
 export const getPosts = async () => {
@@ -81,7 +83,7 @@ export const createPost = async (postData) => {
   if (postData.caption) formData.append("caption", postData.caption);
   if (postData.file) formData.append("file", postData.file);
 
-  const { data } = await API.post("/posts", formData, {
+  const { data } = await API.post("/posts/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
 

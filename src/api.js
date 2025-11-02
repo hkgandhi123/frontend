@@ -1,27 +1,32 @@
 import axios from "axios";
 
-// 🌐 Backend base URL
+/* ------------------ BASE CONFIG ------------------ */
 export const backendURL =
   process.env.REACT_APP_API_URL || "https://bkc-dt1n.onrender.com";
 
-// Axios instance with credentials
 const api = axios.create({
   baseURL: backendURL,
-  withCredentials: true, // send cookies for auth
+  withCredentials: true, // Send cookies for authentication
 });
 
 /* ------------------ HELPERS ------------------ */
 
-// ✅ Resolve full URL for images/files
+// Resolve full URL (for images or files)
 export const resolveURL = (url) => {
   if (!url) return "";
   if (url.startsWith("http")) return url;
   return `${backendURL.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
 };
 
+// Resolve URL + prevent cached images (auto refresh)
+export const resolveURLWithCacheBust = (url) => {
+  if (!url) return "";
+  const resolved = resolveURL(url);
+  return `${resolved}?t=${Date.now()}`;
+};
+
 /* ------------------ AUTH ------------------ */
 
-// ✅ Signup
 export const signup = async (data) => {
   try {
     const res = await api.post("/signup", data);
@@ -32,7 +37,6 @@ export const signup = async (data) => {
   }
 };
 
-// ✅ Login
 export const login = async (data) => {
   try {
     const res = await api.post("/login", data);
@@ -43,7 +47,6 @@ export const login = async (data) => {
   }
 };
 
-// ✅ Logout
 export const logout = async () => {
   try {
     const res = await api.post("/logout");
@@ -54,7 +57,8 @@ export const logout = async () => {
   }
 };
 
-// ✅ Get logged-in user's profile
+/* ------------------ PROFILE ------------------ */
+
 export const getMyProfile = async () => {
   try {
     const res = await api.get("/profile/me");
@@ -67,14 +71,14 @@ export const getMyProfile = async () => {
   }
 };
 
-// ✅ Update logged-in user's profile
 export const updateProfile = async (formData) => {
   try {
-    const res = await api.put("/update-profile", formData, {
+    const res = await api.put("/profile/me/update", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
     const updatedUser = res.data.user || res.data;
-    if (updatedUser.profilePic) updatedUser.profilePic = resolveURL(updatedUser.profilePic);
+    if (updatedUser.profilePic)
+      updatedUser.profilePic = resolveURL(updatedUser.profilePic);
     return updatedUser;
   } catch (err) {
     console.error("❌ updateProfile error:", err.response?.data || err.message);
@@ -88,7 +92,15 @@ export const getProfile = async (id) => {
   try {
     const res = await api.get(`/profile/${id}`);
     const user = res.data.user || res.data || {};
+
+    // 🧩 Auto resolve image URL
     if (user.profilePic) user.profilePic = resolveURL(user.profilePic);
+
+    // 🧩 Include following status (for Follow ↔ Following toggle)
+    if (typeof user.isFollowing === "undefined" && res.data?.isFollowing !== undefined) {
+      user.isFollowing = res.data.isFollowing;
+    }
+
     return user;
   } catch (err) {
     console.error(`❌ getProfile error for id=${id}:`, err.response?.data || err.message);
@@ -122,11 +134,17 @@ export const getPosts = async () => {
   try {
     const res = await api.get("/posts");
     const posts = Array.isArray(res.data) ? res.data : res.data?.posts || [];
-    return posts.map(post => ({
+
+    return posts.map((post) => ({
       ...post,
       image: post.image ? resolveURL(post.image) : null,
       user: post.user
-        ? { ...post.user, profilePic: post.user.profilePic ? resolveURL(post.user.profilePic) : "/default-avatar.png" }
+        ? {
+            ...post.user,
+            profilePic: post.user.profilePic
+              ? resolveURL(post.user.profilePic)
+              : "/default-avatar.png",
+          }
         : {},
     }));
   } catch (err) {
@@ -135,14 +153,20 @@ export const getPosts = async () => {
   }
 };
 
-export const createPost = async (formData) => {
+export const createPost = async (postData) => {
   try {
+    const formData = new FormData();
+    if (postData.caption) formData.append("caption", postData.caption);
+    if (postData.image) formData.append("image", postData.image);
+
     const res = await api.post("/posts", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-    const post = res.data;
+
+    const post = res.data.post || res.data;
     if (post.image) post.image = resolveURL(post.image);
-    if (post.user?.profilePic) post.user.profilePic = resolveURL(post.user.profilePic);
+    if (post.user?.profilePic)
+      post.user.profilePic = resolveURL(post.user.profilePic);
     return post;
   } catch (err) {
     console.error("❌ createPost error:", err.response?.data || err.message);
@@ -157,7 +181,8 @@ export const updatePost = async (id, formData) => {
     });
     const post = res.data;
     if (post.image) post.image = resolveURL(post.image);
-    if (post.user?.profilePic) post.user.profilePic = resolveURL(post.user.profilePic);
+    if (post.user?.profilePic)
+      post.user.profilePic = resolveURL(post.user.profilePic);
     return post;
   } catch (err) {
     console.error("❌ updatePost error:", err.response?.data || err.message);
@@ -180,12 +205,19 @@ export const deletePost = async (id) => {
 export const getStories = async () => {
   try {
     const res = await api.get("/stories");
-    const stories = Array.isArray(res.data) ? res.data : res.data?.stories || [];
-    return stories.map(story => ({
+    const stories = Array.isArray(res.data)
+      ? res.data
+      : res.data?.stories || [];
+    return stories.map((story) => ({
       ...story,
       image: story.image ? resolveURL(story.image) : null,
       user: story.user
-        ? { ...story.user, profilePic: story.user.profilePic ? resolveURL(story.user.profilePic) : "/default-avatar.png" }
+        ? {
+            ...story.user,
+            profilePic: story.user.profilePic
+              ? resolveURL(story.user.profilePic)
+              : "/default-avatar.png",
+          }
         : {},
     }));
   } catch (err) {
@@ -201,7 +233,8 @@ export const createStory = async (formData) => {
     });
     const story = res.data;
     if (story.image) story.image = resolveURL(story.image);
-    if (story.user?.profilePic) story.user.profilePic = resolveURL(story.user.profilePic);
+    if (story.user?.profilePic)
+      story.user.profilePic = resolveURL(story.user.profilePic);
     return story;
   } catch (err) {
     console.error("❌ createStory error:", err.response?.data || err.message);
@@ -213,14 +246,50 @@ export const createStory = async (formData) => {
 
 export const searchUsers = async (query) => {
   try {
-    const res = await api.get(`/users/search?q=${query}`);
+    const res = await api.get(`/users/search?q=${encodeURIComponent(query)}`);
     const users = res.data || [];
-    return users.map(u => ({
+    return users.map((u) => ({
       ...u,
-      profilePic: u.profilePic ? resolveURL(u.profilePic) : "/default-avatar.png",
+      profilePic: u.profilePic
+        ? resolveURL(u.profilePic)
+        : "/default-avatar.png",
     }));
   } catch (err) {
     console.error("❌ searchUsers error:", err.response?.data || err.message);
+    return [];
+  }
+};
+
+/* ------------------ FOLLOWERS / FOLLOWING LIST ------------------ */
+
+export const getFollowersList = async (userId) => {
+  try {
+    const res = await api.get(`/profile/${userId}/followers`);
+    const users = res.data?.followers || res.data || [];
+    return users.map((u) => ({
+      ...u,
+      profilePic: u.profilePic
+        ? resolveURL(u.profilePic)
+        : "/default-avatar.png",
+    }));
+  } catch (err) {
+    console.error(`❌ getFollowersList error for id=${userId}:`, err.response?.data || err.message);
+    return [];
+  }
+};
+
+export const getFollowingList = async (userId) => {
+  try {
+    const res = await api.get(`/profile/${userId}/following`);
+    const users = res.data?.following || res.data || [];
+    return users.map((u) => ({
+      ...u,
+      profilePic: u.profilePic
+        ? resolveURL(u.profilePic)
+        : "/default-avatar.png",
+    }));
+  } catch (err) {
+    console.error(`❌ getFollowingList error for id=${userId}:`, err.response?.data || err.message);
     return [];
   }
 };

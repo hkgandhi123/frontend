@@ -10,11 +10,13 @@ export default function ProfileUpdateForm({ profile, setProfile }) {
     email: profile.email || "",
   });
   const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(resolveURL(profile.profilePic) || null);
+  const [preview, setPreview] = useState(
+    profile.profilePic ? resolveURL(profile.profilePic) + `?t=${Date.now()}` : null
+  );
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 🔄 Update preview when profilePic changes
+  // 🔄 Update preview when profilePic changes externally
   useEffect(() => {
     if (profile.profilePic) {
       setPreview(resolveURL(profile.profilePic) + `?t=${Date.now()}`);
@@ -47,14 +49,19 @@ export default function ProfileUpdateForm({ profile, setProfile }) {
 
       const res = await updateProfile(data);
 
-      // ✅ Update global user context
-      updateUserContext(res.user);
+      // ✅ Confirm res.user and res.user.profilePic exist
+      if (!res?.user) throw new Error("No user returned from server");
 
-      // ✅ Update local profile state with fresh image URL
-      setProfile({
+      const updatedUser = {
         ...res.user,
-        profilePic: resolveURL(res.user.profilePic) + `?t=${Date.now()}`,
-      });
+        profilePic: res.user.profilePic
+          ? resolveURL(res.user.profilePic) + `?t=${Date.now()}`
+          : "/default-avatar.png",
+      };
+
+      // ✅ Update both global and local states
+      updateUserContext(updatedUser);
+      setProfile(updatedUser);
 
       setMessage("✅ Profile updated successfully!");
       setFile(null);

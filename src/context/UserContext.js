@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { getMyProfile, login, signup, logout, resolveURL } from "../api";
+import { getMyProfile, login, signup, logout } from "../api";
+import { resolveURLWithCacheBust } from "../utils/resolveURL";
 
 const UserContext = createContext();
 export const useUserContext = () => useContext(UserContext);
@@ -9,14 +10,25 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [newPostGlobal, setNewPostGlobal] = useState(null);
 
+  /* 🧩 Helper: Return valid profile image URL or default */
+  const getProfilePic = (url) => {
+    if (!url) return "/default-avatar.png";
+    if (url.startsWith("blob:")) return url; // local preview
+    return resolveURLWithCacheBust(url);
+  };
+
+  /* 🔄 Fetch current user profile */
   const fetchUser = async () => {
     setLoading(true);
     try {
       const data = await getMyProfile();
-      if (data.profilePic)
-        data.profilePic = resolveURL(data.profilePic) + `?t=${Date.now()}`;
-      setUser(data.user || data);
+      setUser({
+        ...data,
+        profilePic: getProfilePic(data.profilePic),
+      });
+      console.log("✅ User fetched:", data.username);
     } catch (err) {
+      console.error("❌ Fetch user error:", err);
       setUser(null);
     } finally {
       setLoading(false);
@@ -27,67 +39,90 @@ export const UserProvider = ({ children }) => {
     fetchUser();
   }, []);
 
-  // Update global user state (profilePic included)
+  /* ✏️ Update user context after profile change */
   const updateUserContext = (updatedUser) => {
-    setUser({
+    const cleanUrl = updatedUser.profilePic?.replace(/(\?|&)t=\d+/g, "") || "";
+    const newUser = {
       ...updatedUser,
-      profilePic: updatedUser.profilePic
-        ? resolveURL(updatedUser.profilePic) + `?t=${Date.now()}`
-        : "/default-avatar.png",
-    });
+      profilePic: getProfilePic(cleanUrl), // refresh image with timestamp
+    };
+    console.log("🧠 Context updated →", newUser.username);
+    setUser((prev) => ({
+      ...prev,
+      ...newUser,
+    }));
   };
 
+  /* 🔁 Refresh user from backend */
+  const refreshUser = async () => {
+    await fetchUser();
+  };
+
+  /* 🔐 Login */
   const handleLogin = async ({ email, password }) => {
     try {
       const data = await login({ email, password });
-      if (data.user?.profilePic)
-        data.user.profilePic = resolveURL(data.user.profilePic) + `?t=${Date.now()}`;
-      setUser(data.user || data);
-      return { success: true, user: data.user || data };
+      setUser({
+        ...data.user,
+        profilePic: getProfilePic(data.user.profilePic),
+      });
+      return { success: true, user: data.user };
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || "Login failed ❌" };
+      return {
+        success: false,
+        message: err.response?.data?.message || "Login failed ❌",
+      };
     }
   };
 
+  /* 🆕 Signup */
   const handleSignup = async ({ username, email, password }) => {
     try {
       const data = await signup({ username, email, password });
-      if (data.user?.profilePic)
-        data.user.profilePic = resolveURL(data.user.profilePic) + `?t=${Date.now()}`;
-      setUser(data.user || data);
-      return { success: true, user: data.user || data };
+      setUser({
+        ...data.user,
+        profilePic: getProfilePic(data.user.profilePic),
+      });
+      return { success: true, user: data.user };
     } catch (err) {
-      return { success: false, message: err.response?.data?.message || "Signup failed ❌" };
+      return {
+        success: false,
+        message: err.response?.data?.message || "Signup failed ❌",
+      };
     }
   };
 
+  /* 🚪 Logout */
   const handleLogout = async () => {
     try {
       await logout();
       setUser(null);
       setNewPostGlobal(null);
     } catch (err) {
-      console.error("Logout failed", err.response?.data);
+      console.error("Logout failed:", err);
     }
   };
 
+  /* 🆙 Add new post globally */
   const addNewPost = (newPost, type = "post") => {
     const normalized = {
       ...newPost,
       type,
-      image: newPost.image.startsWith("http") ? newPost.image : resolveURL(newPost.image),
+      image: newPost.image.startsWith("http")
+        ? resolveURLWithCacheBust(newPost.image)
+        : newPost.image,
       user: {
         ...newPost.user,
-        profilePic: newPost.user?.profilePic
-          ? resolveURL(newPost.user.profilePic) + `?t=${Date.now()}`
-          : "/default-avatar.png",
+        profilePic: getProfilePic(newPost.user?.profilePic),
       },
     };
 
     setUser((prev) => ({
       ...prev,
-      posts: type === "post" ? [normalized, ...(prev.posts || [])] : prev.posts,
-      reels: type === "reel" ? [normalized, ...(prev.reels || [])] : prev.reels,
+      posts:
+        type === "post" ? [normalized, ...(prev?.posts || [])] : prev?.posts,
+      reels:
+        type === "reel" ? [normalized, ...(prev?.reels || [])] : prev?.reels,
     }));
 
     setNewPostGlobal(normalized);
@@ -102,6 +137,7 @@ export const UserProvider = ({ children }) => {
         loading,
         isAuthenticated: !!user?._id,
         fetchUser,
+        refreshUser,
         handleLogin,
         handleSignup,
         handleLogout,

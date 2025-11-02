@@ -1,53 +1,67 @@
 import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { FaHome, FaSearch, FaPlusSquare, FaVideo } from "react-icons/fa";
+import {
+  LuHouse,
+  LuSquarePlus,
+  LuClapperboard,
+  LuChevronsUp,
+  LuChevronsUpDown,
+} from "react-icons/lu";
 import { useUserContext } from "../context/UserContext";
-import { resolveURLWithCacheBust } from "../utils/resolveURL";
 
 const BottomNav = () => {
   const { user } = useUserContext();
   const navigate = useNavigate();
+
   if (!user) return null;
 
-  const links = [
-    { to: "/", icon: <FaHome size={24} />, label: "Home" },
-    { to: "/search", icon: <FaSearch size={24} />, label: "Search" },
-    { to: "/create", icon: <FaPlusSquare size={24} />, label: "Create" },
-    { to: "/reels", icon: <FaVideo size={24} />, label: "Reels" },
-  ];
+  const iconSize = 28; // 🔥 Thicker & larger icons
 
-  const getProfilePic = () => resolveURLWithCacheBust(user.profilePic);
+  const links = [
+    { to: "/", icon: <LuHouse size={iconSize} />, label: "Home" },
+    {
+      to: "/search",
+      icon: <LuChevronsUpDown size={iconSize} />,
+      label: "Search",
+    },
+    { to: "/create", icon: <LuSquarePlus size={iconSize} />, label: "Create" },
+    { to: "/reels", icon: <LuClapperboard size={iconSize} />, label: "Reels" },
+  ];
 
   return (
     <>
-      {/* Mobile */}
-      <div className="fixed bottom-0 left-0 w-full flex justify-around items-center border-t bg-white py-3 sm:hidden z-50">
+      {/* 📱 Mobile Bottom Nav */}
+      <div className="fixed bottom-0 left-0 w-full flex justify-around items-center 
+                      border-t border-gray-700 bg-black/70 backdrop-blur-md py-3 sm:hidden z-50 shadow-lg">
         {links.map((link) => (
           <NavLink
             key={link.to}
             to={link.to}
             end={link.to === "/"}
             className={({ isActive }) =>
-              `flex flex-col items-center ${isActive ? "text-black" : "text-gray-500"}`
+              `flex flex-col items-center transition-transform duration-200 ${
+                isActive
+                  ? "text-white scale-110 font-extrabold"
+                  : "text-gray-400 hover:text-white hover:scale-105"
+              }`
             }
           >
             {link.icon}
           </NavLink>
         ))}
+
+        {/* 🔼 Profile Shortcut */}
         <div
           onClick={() => navigate("/profile/me")}
-          className="flex flex-col items-center cursor-pointer"
+          className="flex flex-col items-center cursor-pointer text-gray-400 hover:text-white hover:scale-110 transition-transform duration-200"
         >
-          <img
-            src={getProfilePic()}
-            alt={user.username || "Profile"}
-            className="w-6 h-6 rounded-full object-cover border"
-          />
+          <LuChevronsUp size={iconSize + 2} />
         </div>
       </div>
 
-      {/* Desktop */}
-      <div className="hidden sm:flex fixed bottom-0 left-0 w-full justify-center border-t bg-white py-3 z-50">
+      {/* 💻 Desktop Bottom Nav */}
+      <div className="hidden sm:flex fixed bottom-0 left-0 w-full justify-center 
+                      border-t border-gray-700 bg-black/70 backdrop-blur-md py-3 z-50 shadow-lg">
         <div className="flex items-center space-x-10">
           {links.map((link) => (
             <NavLink
@@ -55,21 +69,23 @@ const BottomNav = () => {
               to={link.to}
               end={link.to === "/"}
               className={({ isActive }) =>
-                `flex flex-col items-center ${isActive ? "text-black" : "text-gray-500"}`
+                `flex flex-col items-center transition-transform duration-200 ${
+                  isActive
+                    ? "text-white scale-110 font-extrabold"
+                    : "text-gray-400 hover:text-white hover:scale-105"
+                }`
               }
             >
               {link.icon}
             </NavLink>
           ))}
+
+          {/* 🔼 Profile Shortcut */}
           <div
             onClick={() => navigate("/profile/me")}
-            className="flex flex-col items-center cursor-pointer"
+            className="flex flex-col items-center cursor-pointer text-gray-400 hover:text-white hover:scale-110 transition-transform duration-200"
           >
-            <img
-              src={getProfilePic()}
-              alt={user.username || "Profile"}
-              className="w-6 h-6 rounded-full object-cover border"
-            />
+            <LuChevronsUp size={iconSize + 2} />
           </div>
         </div>
       </div>

@@ -6,12 +6,14 @@ import Home from "./pages/Home";
 import Profile from "./pages/Profile";
 import Login from "./pages/Login";
 import Signup from "./pages/Signup";
-import CreatePost from "./pages/CreatePost";
+import CreatePost from "./components/CreatePostComponent";
 import Search from "./pages/Search";
 import Reels from "./pages/Reels";
 import EditProfile from "./pages/EditProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Messages from "./pages/Messages";
+
+
 
 function App() {
   return (
