@@ -62,7 +62,7 @@ const HomeHeader = () => {
         />
       </div>
 
-    <h1 class="text-2xl font-bold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-transparent bg-clip-text">
+    <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-transparent bg-clip-text">
   HitBit
 </h1>
 
