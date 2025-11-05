@@ -2,10 +2,48 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Optional custom CSS */
+/* 🌈 Basic global styling */
 body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  background-color: #0f172a; /* fallback dark background */
+  color: #fff;
+  overflow-x: hidden;
+}
+
+/* 🧱 Hide scrollbar for all scrollable areas */
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-hide {
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+/* ✨ Optional smooth transitions */
+* {
+  transition: all 0.2s ease-in-out;
+}
+
+/* 🌫️ Optional glassmorphism effect for cards */
+.card-glass {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 1rem;
+}
+
+/* 🌈 Optional subtle gradient overlay for background */
+.bg-overlay::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(0, 0, 0, 0.2) 0%,
+    rgba(0, 0, 0, 0.6) 100%
+  );
+  z-index: 1;
+  pointer-events: none;
 }

@@ -20,9 +20,9 @@ const BottomNav = () => {
   const links = [
     { to: "/", icon: <LuHouse size={iconSize} />, label: "Home" },
     {
-      to: "/search",
-      icon: <LuChevronsUpDown size={iconSize} />,
-      label: "Search",
+      to: "/Mainpage",
+      icon: <LuChevronsUpDown size={34} />,
+      label: "Mainpage",
     },
     { to: "/create", icon: <LuSquarePlus size={iconSize} />, label: "Create" },
     { to: "/reels", icon: <LuClapperboard size={iconSize} />, label: "Reels" },
@@ -55,7 +55,7 @@ const BottomNav = () => {
           onClick={() => navigate("/profile/me")}
           className="flex flex-col items-center cursor-pointer text-gray-400 hover:text-white hover:scale-110 transition-transform duration-200"
         >
-          <LuChevronsUp size={iconSize + 2} />
+          <LuChevronsUp size={34 + 2} />
         </div>
       </div>
 
@@ -85,7 +85,7 @@ const BottomNav = () => {
             onClick={() => navigate("/profile/me")}
             className="flex flex-col items-center cursor-pointer text-gray-400 hover:text-white hover:scale-110 transition-transform duration-200"
           >
-            <LuChevronsUp size={iconSize + 2} />
+            <LuChevronsUp size={34 + 2} />
           </div>
         </div>
       </div>

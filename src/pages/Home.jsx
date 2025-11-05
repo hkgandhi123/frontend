@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { Helmet } from "react-helmet";
 import { useUserContext } from "../context/UserContext";
@@ -26,6 +26,31 @@ const Home = () => {
   const [showPostModal, setShowPostModal] = useState(false);
   const [showStoryModal, setShowStoryModal] = useState(false);
   const [selectedStory, setSelectedStory] = useState(null);
+
+  // 🔹 Header Hide States
+  const [hideHeader, setHideHeader] = useState(false);
+  const lastScrollRef = useRef(0);
+  const scrollContainerRef = useRef(null);
+
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      const currentScroll = scrollContainer.scrollTop;
+
+      if (currentScroll > lastScrollRef.current + 20) {
+        setHideHeader(true); // scroll down → hide
+      } else if (currentScroll < lastScrollRef.current - 20) {
+        setHideHeader(false); // scroll up → show
+      }
+
+      lastScrollRef.current = currentScroll;
+    };
+
+    scrollContainer.addEventListener("scroll", handleScroll);
+    return () => scrollContainer.removeEventListener("scroll", handleScroll);
+  }, []);
 
   const resolveProfilePic = (pic) =>
     pic && pic !== "null"
@@ -131,73 +156,78 @@ const Home = () => {
   return (
     <div className="relative min-h-screen overflow-hidden text-white">
       <Helmet>
-        <title>HitBit - Feed</title>
+        <title>HitBit</title>
       </Helmet>
-
-      {/* 🔹 Blurred Background Layer */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#b56576] via-[#c27c88] to-[#e8b4b8] blur-2xl scale-110"></div>
-
-      {/* 🔹 Foreground Content */}
-      <div className="relative z-10">
-        {/* Header */}
-        <div className="fixed top-0 left-0 right-0 z-50">
+<div
+          className={` top-0 left-0 right-0 z-50 transition-transform duration-300 ${
+            hideHeader ? "-translate-y-full" : "translate-y-0"
+          }`}
+        >
           <HomeHeader
             onAddPost={() => setShowPostModal(true)}
             onAddStory={() => setShowStoryModal(true)}
           />
         </div>
+      {/* 🔹 Background */}
+     
 
-        {/* Stories */}
-        <div className="fixed top-12 sm:top-14 left-0 right-0 z-40 border-b border-white/10 transpirant-0 backdrop-blur-md">
-          <div className="flex space-x-4 p-3 overflow-x-auto">
-            <div
-              className="flex flex-col items-center cursor-pointer"
-              onClick={() => setShowStoryModal(true)}
-            >
-              <div className="w-16 h-16 rounded-full flex items-center justify-center bg-white/30 border border-white/40">
-                <span className="text-2xl font-bold">+</span>
-              </div>
-              <span className="text-xs mt-1 text-gray-100">Add Story</span>
-            </div>
+      
+        
 
-            {stories
-              .filter((s) => s?.user?._id && s.user._id !== currentUser?._id)
-              .map((story) => (
-                <div key={story._id} className="flex flex-col items-center">
-                  <div
-                    className="w-16 h-16 p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 rounded-full cursor-pointer"
-                    onClick={() => setSelectedStory(story)}
-                  >
-                    <img
-                      src={story.user?.profilePic}
-                      alt={story.user?.username}
-                      className="w-full h-full rounded-full object-cover border-2 border-white"
-                    />
-                  </div>
-                  <span
-                    className="text-xs mt-1 cursor-pointer text-gray-100"
-                    onClick={() => navigate(`/profile/${story.user._id}`)}
-                  >
-                    {story.user?.username}
-                  </span>
+        {/* 🔹 Scrollable Content (Stories + Posts) */}
+        <div
+          ref={scrollContainerRef}
+          className="overflow-y-auto h-[calc(100vh-5rem)] mt-[3rem] pb-20 px-2 sm:px-0 relative z-10"
+        >
+          {/* Stories scroll with posts */}
+          <div className="border-b border-white/10 backdrop-blur-md bg-blue-900">
+            <div className="flex space-x-3 p-2 overflow-x-auto">
+              <div
+                className="flex flex-col items-center cursor-pointer"
+                onClick={() => setShowStoryModal(true)}
+              >
+                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/30 border border-white/40">
+                  <span className="text-2xl font-bold">+</span>
                 </div>
-              ))}
-          </div>
-        </div>
+                <span className="text-xs mt-1 text-gray-100">Add Story</span>
+              </div>
 
-        {/* 🔹 Scrollable Posts */}
-        <div className="overflow-y-auto h-[calc(100vh-11rem)] mt-[9rem] pb-20 px-2 sm:px-0">
-          <div className="max-w-3xl mx-auto flex flex-col space-y-6">
+              {stories
+                .filter((s) => s?.user?._id && s.user._id !== currentUser?._id)
+                .map((story) => (
+                  <div key={story._id} className="flex flex-col items-center">
+                    <div
+                      className="w-16 h-16 p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 rounded-full cursor-pointer"
+                      onClick={() => setSelectedStory(story)}
+                    >
+                      <img
+                        src={story.user?.profilePic}
+                        alt={story.user?.username}
+                        className="w-full h-full rounded-full object-cover border-2 border-white"
+                      />
+                    </div>
+                    <span
+                      className="text-xs mt-1 cursor-pointer text-gray-100"
+                      onClick={() => navigate(`/profile/${story.user._id}`)}
+                    >
+                      {story.user?.username}
+                    </span>
+                  </div>
+                ))}
+            </div>
+          </div>
+
+          {/* Posts Section */}
+          <div className="mt-0">
             {loading ? (
-              <p className="text-center mt-10 text-gray-100">Loading posts...</p>
+              <p className="text-center mt-10 text-gray-100">
+                Loading posts...
+              </p>
             ) : posts.length === 0 ? (
               <p className="text-center mt-10 text-gray-100">No posts yet</p>
             ) : (
               posts.map((post) => (
-                <div
-                  key={post._id}
-                  className="rounded-2xl shadow-lg bg-gradient-to-br from-[#c46f7f] via-[#d28795] to-[#e8b4b8] text-white p-4 backdrop-blur-lg transition-transform hover:scale-[1.01]"
-                >
+                <div key={post._id} className="w-full">
                   <PostCard
                     post={post}
                     onDelete={handleDeletePost}
@@ -234,7 +264,7 @@ const Home = () => {
           <BottomNav />
         </div>
       </div>
-    </div>
+    
   );
 };
 

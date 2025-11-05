@@ -40,7 +40,7 @@ const HomeHeader = () => {
   return (
     <div
       className={`fixed top-0 left-0 right-0 
-      bg-black/60 backdrop-blur-md border-b border-gray-700
+      bg-black/70 backdrop-blur-md border-b border-gray-700
       text-white shadow-lg
       flex justify-between items-center px-4 
       transition-transform duration-500 ease-in-out 
