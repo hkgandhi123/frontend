@@ -10,14 +10,12 @@ export const UserProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [newPostGlobal, setNewPostGlobal] = useState(null);
 
-  /* 🧩 Helper: Return valid profile image URL or default */
   const getProfilePic = (url) => {
     if (!url) return "/default-avatar.png";
-    if (url.startsWith("blob:")) return url; // local preview
+    if (url.startsWith("blob:")) return url;
     return resolveURLWithCacheBust(url);
   };
 
-  /* 🔄 Fetch current user profile */
   const fetchUser = async () => {
     setLoading(true);
     try {
@@ -39,26 +37,23 @@ export const UserProvider = ({ children }) => {
     fetchUser();
   }, []);
 
-  /* ✏️ Update user context after profile change */
   const updateUserContext = (updatedUser) => {
     const cleanUrl = updatedUser.profilePic?.replace(/(\?|&)t=\d+/g, "") || "";
     const newUser = {
       ...updatedUser,
-      profilePic: getProfilePic(cleanUrl), // refresh image with timestamp
+      profilePic: getProfilePic(cleanUrl),
     };
-    console.log("🧠 Context updated →", newUser.username);
     setUser((prev) => ({
       ...prev,
       ...newUser,
     }));
   };
 
-  /* 🔁 Refresh user from backend */
   const refreshUser = async () => {
     await fetchUser();
   };
 
-  /* 🔐 Login */
+  /* 🔐 Normal Login */
   const handleLogin = async ({ email, password }) => {
     try {
       const data = await login({ email, password });
@@ -92,7 +87,33 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  /* 🚪 Logout */
+  /* ✅ ✅ ✅ GOOGLE LOGIN (NEW) */
+  const handleGoogleLogin = async (credential) => {
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: credential }),
+      });
+
+      const data = await res.json();
+      if (!data.success) {
+        return { success: false, message: "Google Login Failed ❌" };
+      }
+
+      // ✅ Save user in context
+      setUser({
+        ...data.user,
+        profilePic: getProfilePic(data.user.profilePic),
+      });
+
+      return { success: true };
+    } catch (err) {
+      console.log(err);
+      return { success: false, message: "Google Login Error ❌" };
+    }
+  };
+
   const handleLogout = async () => {
     try {
       await logout();
@@ -103,7 +124,6 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  /* 🆙 Add new post globally */
   const addNewPost = (newPost, type = "post") => {
     const normalized = {
       ...newPost,
@@ -140,6 +160,7 @@ export const UserProvider = ({ children }) => {
         refreshUser,
         handleLogin,
         handleSignup,
+        handleGoogleLogin, // ✅ NEW EXPORT
         handleLogout,
         addNewPost,
         newPostGlobal,

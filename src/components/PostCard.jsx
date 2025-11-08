@@ -164,7 +164,7 @@ const PostCard = ({ post }) => {
   return (
     <>
       {/* 🧱 Post Card */}
-      <div className="bg-gradient-to-br from-purple-500 via-blue-300 to-blue-500 text-white border border-gray-700 shadow-lg max-w-2xl mx-auto my-4 hover:shadow-2xl transition relative overflow-hidden w-full">
+      <div className=" bg-gradient-to-br from-purple-500 via-blue-300 to-blue-500 shadow-lg max-w-2xl mx-auto my-4 hover:shadow-2xl transition relative overflow-hidden w-full">
         {/* Header */}
         <div className="flex justify-between items-center p-1 backdrop-blur-sm relative" ref={menuRef}>
           <div className="flex items-center space-x-3 cursor-pointer" onClick={goToProfile}>
@@ -284,18 +284,18 @@ const PostCard = ({ post }) => {
           </div>
 
           {/* Right Voting Buttons */}
-          <div className="flex flex-col items-center justify-center space-y-6 min-w-[40px]">
+          <div className="flex flex-col items-center text-extrabold justify-center space-y-6 min-w-[40px]">
             <LuChevronUp
               size={40}
               className={`cursor-pointer ${
-                hasVoted === "up" ? "text-green-400" : "text-white/60"
+                hasVoted === "up" ? "text-green-600" : "text-white/70"
               } hover:text-green-300`}
               onClick={handleUpvote}
             />
             <LuChevronDown
               size={40}
               className={`cursor-pointer ${
-                hasVoted === "down" ? "text-red-400" : "text-white/60"
+                hasVoted === "down" ? "text-red-600" : "text-white/70"
               } hover:text-red-300`}
               onClick={handleDownvote}
             />

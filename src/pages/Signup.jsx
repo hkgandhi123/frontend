@@ -1,9 +1,10 @@
 import React, { useState } from "react";
 import { useUserContext } from "../context/UserContext";
 import { useNavigate, Link } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
 
 const Signup = () => {
-  const { handleSignup } = useUserContext();
+  const { handleSignup, handleGoogleLogin } = useUserContext();
   const navigate = useNavigate();
 
   const [username, setUsername] = useState("");
@@ -61,24 +62,31 @@ const Signup = () => {
     else setError(res.message);
   };
 
+  // ✅ GOOGLE SIGNUP HANDLER
+  const handleGoogleSuccess = async (cred) => {
+    const token = cred.credential;
+    const res = await handleGoogleLogin(token);
+
+    if (res.success) navigate("/");
+    else setError("Google Signup Failed ❌");
+  };
+
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-green-700 via-blue-700 to-black px-4 py-8">
-      {/* Top Illustration */}
+      {/* Top Illustration 
       <div className="flex flex-col items-center mb-6">
-        
-
-        {/* 🔹 Make image wider (left-right bigger) */}
         <img
           src="/singupimg.png.jpg"
           alt="Signup"
           className="w-60 sm:w-70 md:w-80 h-auto object-contain"
         />
-      </div>
-      <h1 className="text-2xl sm:text-3xl font-bold text-white text-center leading-tight mb-4">
-          Create New <br /> Account
-        </h1>
+      </div>*/}
 
-      {/* Form */}
+      <h1 className="text-2xl sm:text-3xl font-bold text-white text-center leading-tight mb-4">
+        Create New <br /> Account
+      </h1>
+
+      {/* FORM */}
       <form
         onSubmit={onSubmit}
         className="bg-white/10 backdrop-blur-lg rounded-3xl p-10 shadow-2xl space-y-3 w-full max-w-sm"
@@ -112,7 +120,7 @@ const Signup = () => {
           )}
         </div>
 
-        {/* Email or Phone */}
+        {/* Email */}
         <div className="w-full">
           <label className="text-gray-200 text-sm mb-1 block">
             Email or Phone
@@ -148,6 +156,14 @@ const Signup = () => {
           Sign Up
         </button>
 
+        {/* ✅ Google Signup Button */}
+        <div className="flex justify-center mt-3">
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setError("Google Login Failed ❌")}
+          />
+        </div>
+
         {/* Login link */}
         <p className="text-white text-sm mt-1 text-center">
           Already have an account?{" "}
@@ -159,10 +175,7 @@ const Signup = () => {
           </Link>
         </p>
 
-        {/* Pride Text */}
-        <p className="text-white text-sm mt-2 text-center">
-          Pride to be Indian
-        </p>
+        <p className="text-white text-sm mt-2 text-center">Pride to be Indian</p>
       </form>
     </div>
   );

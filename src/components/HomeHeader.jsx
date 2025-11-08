@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { AiOutlineHeart } from "react-icons/ai";
-import { FiSend } from "react-icons/fi";
 import { LuSearch } from "react-icons/lu";
+import { FiMessageCircle } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useUserContext } from "../context/UserContext";
 import { resolveURLWithCacheBust } from "../utils/resolveURL";
@@ -11,6 +11,9 @@ const HomeHeader = () => {
   const { user } = useUserContext();
   const [showHeader, setShowHeader] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
+
+  // ✅ Unread messages count (default 0 so badge hidden)
+  const [unreadMessages, setUnreadMessages] = useState(0);
 
   // ✅ Scroll Hide / Show Logic
   useEffect(() => {
@@ -47,6 +50,7 @@ const HomeHeader = () => {
       ${showHeader ? "translate-y-0" : "-translate-y-full"} 
       h-12 sm:h-14 z-50`}
     >
+      
       {/* 👤 Profile Picture */}
       <div
         className="cursor-pointer"
@@ -62,26 +66,36 @@ const HomeHeader = () => {
         />
       </div>
 
-    <h1 class="text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-transparent bg-clip-text">
-  HitBit
-</h1>
-
+      <h1 className="text-3xl font-extrabold bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 text-transparent bg-clip-text">
+        HitBit
+      </h1>
 
       {/* 🔍 Search + ❤️ Notifications + ✉️ Messages */}
-      <div className="flex space-x-5 text-2xl items-center">
+      <div className="flex space-x-3 text-2xl items-center">
+        
         <LuSearch
           className="cursor-pointer hover:scale-110 transition-transform text-white"
           onClick={() => navigate("/search")}
         />
+
         <AiOutlineHeart
           className="cursor-pointer hover:scale-110 transition-transform text-white"
           onClick={() => navigate("/notifications")}
         />
-        <FiSend
-          className="cursor-pointer hover:scale-110 transition-transform text-white"
-          onClick={() => navigate("/messages")}
-        />
+
+        {/* ✅ Message Icon with Conditional Badge */}
+        <div className="relative cursor-pointer" onClick={() => navigate("/messages")}>
+          <FiMessageCircle className="text-white text-2xl hover:scale-110 transition-transform" />
+
+          {unreadMessages > 0 && (
+            <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[7px] px-1 py-[1px] rounded-full">
+              {unreadMessages}
+            </span>
+          )}
+        </div>
+
       </div>
+
     </div>
   );
 };

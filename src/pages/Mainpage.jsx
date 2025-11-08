@@ -22,13 +22,10 @@ const Mainpage = () => {
     <div className="relative h-screen overflow-hidden">
       {/* 🌆 Static Background */}
       <div
-        className="fixed inset-0 bg-cover bg-center bg-no-repeat z-0"
-        style={{
-          backgroundImage:
-            "url('https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1600&q=80')",
-          filter: "brightness(0.6)",
-        }}
+        className="fixed inset-0 bg-cover bg-center bg-gradient-to-b from-green-700 via-blue-700 to-black bg-no-repeat z-0"
+       
       ></div>
+
 
       {/* 🧱 Scrollable Posts */}
       <div className="relative z-10 h-full overflow-y-auto scrollbar-hide p-4 space-y-6">

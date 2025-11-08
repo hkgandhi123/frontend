@@ -79,22 +79,28 @@ const EditProfile = () => {
       <h2 className="text-xl font-bold mb-4 text-center">Edit Profile</h2>
 
       <form onSubmit={handleSubmit} className="flex flex-col space-y-4">
-        {/* Username */}
-        <input
-          type="text"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-          placeholder="Username"
-          className="border p-2 rounded"
-        />
+       {/* Username */}
+<input
+  type="text"
+  value={username}
+  onChange={(e) => setUsername(e.target.value)}
+  placeholder="Username"
+  spellCheck="false"
+  autoCorrect="off"
+  autoCapitalize="off"
+  className="border p-2 rounded text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+/>
 
-        {/* Bio */}
-        <textarea
-          value={bio}
-          onChange={(e) => setBio(e.target.value)}
-          placeholder="Bio / Thought"
-          className="border p-2 rounded"
-        />
+{/* Bio */}
+<textarea
+  value={bio}
+  onChange={(e) => setBio(e.target.value)}
+  placeholder="Bio / Thought"
+  spellCheck="false"
+  autoCorrect="off"
+  autoCapitalize="off"
+  className="border p-2 rounded text-black placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400"
+/>
 
         {/* Preview */}
         {preview && (

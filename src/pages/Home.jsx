@@ -186,7 +186,7 @@ const Home = () => {
                 className="flex flex-col items-center cursor-pointer"
                 onClick={() => setShowStoryModal(true)}
               >
-                <div className="w-10 h-10 rounded-full flex items-center justify-center bg-white/30 border border-white/40">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-white/30 border border-white/40">
                   <span className="text-2xl font-bold">+</span>
                 </div>
                 <span className="text-xs mt-1 text-gray-100">Add Story</span>

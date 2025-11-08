@@ -149,7 +149,7 @@ const Profile = () => {
   return (
     <div className="relative min-h-screen overflow-hidden">
       {/* 🔹 Light Maroon Gradient Background with Blur */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#b56576] via-[#c27c88] to-[#e8b4b8] blur-2xl scale-110"></div>
+      <div className="absolute inset-0 bg-gradient-to-b from-black via-blue-900 to-emerald-700 blur-2xl scale-110"></div>
 
       {/* 🔹 Foreground Content */}
       <div className="relative z-10 max-w-3xl mx-auto p-4 text-white">
