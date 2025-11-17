@@ -25,19 +25,43 @@ const Login = () => {
     }
   };
 
-  // ✅ Normal login
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    setError("");
+  // ------------------ VALIDATION ADDED VERSION ------------------
 
-    try {
-      const res = await handleLogin({ email, password });
-      if (res.success) navigate("/");
-      else setError(res.message || "Login failed");
-    } catch (err) {
-      setError(err.message || "Login failed");
-    }
-  };
+const onSubmit = async (e) => {
+  e.preventDefault();
+  setError("");
+
+  // Email / phone validation
+  if (!email.trim()) {
+    return setError("Email or phone is required");
+  }
+
+  // Email Format Check
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const phoneRegex = /^[0-9]{10}$/;
+
+  if (!emailRegex.test(email) && !phoneRegex.test(email)) {
+    return setError("Enter a valid email or 10-digit phone number");
+  }
+
+  // Password validation
+  if (!password.trim()) {
+    return setError("Password is required");
+  }
+
+  if (password.length < 6) {
+    return setError("Password must be at least 6 characters");
+  }
+
+  try {
+    const res = await handleLogin({ emailOrPhone: email, password });
+    if (res.success) navigate("/");
+    else setError(res.message || "Login failed");
+  } catch (err) {
+    setError(err.message || "Login failed");
+  }
+};
+
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-black via-blue-900 to-emerald-700 px-6">
@@ -57,19 +81,20 @@ const Login = () => {
         {/* Normal Login Form */}
         <form
           onSubmit={onSubmit}
-          className="bg-white/10 backdrop-blur-lg rounded-3xl p-6 shadow-2xl space-y-4"
+          className="bg-transparent backdrop-blur-lg rounded-3xl p-6 shadow-2xl space-y-4"
         >
           <div className="text-left">
-  <label className="block text-gray-300 text-sm mb-1">Email or Phone</label>
-  <input
-    type="text"
-    placeholder="Enter your email or phone"
-    value={email}
-    onChange={(e) => setEmail(e.target.value)}
-    required
-    className="w-full px-4 py-2 rounded-xl bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
-  />
-</div>
+            <label className="block text-gray-300 text-sm mb-1">Email or Phone</label>
+            <input
+              type="text"
+              placeholder="Enter your email or phone"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="username"
+              className="w-full px-4 py-2 rounded-xl bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
+            />
+          </div>
 
 
           <div className="text-left">
@@ -80,6 +105,7 @@ const Login = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
+              autoComplete="current-password"
               className="w-full px-4 py-2 rounded-xl bg-white/20 text-white placeholder-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400"
             />
           </div>
@@ -107,10 +133,15 @@ const Login = () => {
           </Link>
         </p>
 
-        <p className="mt-8 text-sm text-gray-300 tracking-wide">
-          Pride to be Indian 🇮🇳
-        </p>
-        
+        <div className="mt-2 flex justify-center items-center space-x-2 bg-gradient-to-r from-orange-400 via-white to-green-600 rounded-lg px-3 py-1 w-max mx-auto shadow-md">
+          <span className="text-black font-semibold text-sm">Pride to be Indian</span>
+          <img
+            src="https://upload.wikimedia.org/wikipedia/en/4/41/Flag_of_India.svg"
+            alt="India"
+            className="w-5 h-5"
+          />
+        </div>
+
       </div>
     </div>
   );

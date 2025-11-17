@@ -73,23 +73,14 @@ const Signup = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-green-700 via-blue-700 to-black px-4 py-8">
-      {/* Top Illustration 
-      <div className="flex flex-col items-center mb-6">
-        <img
-          src="/singupimg.png.jpg"
-          alt="Signup"
-          className="w-60 sm:w-70 md:w-80 h-auto object-contain"
-        />
-      </div>*/}
-
-      <h1 className="text-2xl sm:text-3xl font-bold text-white text-center leading-tight mb-4">
+      <h1 className="text-3xl sm:text-3xl font-bold text-white text-center leading-tight mb-4">
         Create New <br /> Account
       </h1>
 
       {/* FORM */}
       <form
         onSubmit={onSubmit}
-        className="bg-white/10 backdrop-blur-lg rounded-3xl p-10 shadow-2xl space-y-3 w-full max-w-sm"
+        className="bg-transparent backdrop-blur-lg rounded-3xl p-10 shadow-2xl space-y-3 w-full max-w-sm"
       >
         {error && <p className="text-red-400 text-sm">{error}</p>}
 
@@ -114,9 +105,7 @@ const Signup = () => {
             <p className="text-red-400 text-xs mt-1">Username already taken</p>
           )}
           {!checking && isUnique && username && (
-            <p className="text-green-400 text-xs mt-1">
-              Username available ✅
-            </p>
+            <p className="text-green-400 text-xs mt-1">Username available ✅</p>
           )}
         </div>
 
@@ -145,6 +134,7 @@ const Signup = () => {
             onChange={(e) => setPassword(e.target.value)}
             className="w-full p-2 rounded-xl bg-gray-300 text-gray-900 focus:outline-none text-base sm:text-sm"
             required
+            autoComplete="new-password"
           />
         </div>
 
@@ -175,7 +165,15 @@ const Signup = () => {
           </Link>
         </p>
 
-        <p className="text-white text-sm mt-2 text-center">Pride to be Indian</p>
+       <div className="mt-2 flex justify-center items-center space-x-2 bg-gradient-to-r from-orange-400 via-white to-green-600 rounded-lg px-3 py-1 w-max mx-auto shadow-md">
+  <span className="text-black font-semibold text-sm">Pride to be Indian</span>
+  <img
+    src="https://upload.wikimedia.org/wikipedia/en/4/41/Flag_of_India.svg"
+    alt="India"
+    className="w-5 h-5"
+  />
+</div>
+
       </form>
     </div>
   );

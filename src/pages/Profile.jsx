@@ -1,10 +1,13 @@
 import React, { useEffect, useState } from "react";
+import { backendURL } from "../api";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useUserContext } from "../context/UserContext";
-import { getProfile, deletePost, followUser, unfollowUser } from "../api";
+import { getProfile,  followUser, unfollowUser } from "../api";
 import PostModal from "../components/PostModal";
 import { resolveURLWithCacheBust } from "../utils/resolveURL";
 import { BsThreeDotsVertical } from "react-icons/bs"; // ⬅️ Added 3-dots icon
+
+
 
 const resolveProfilePic = (url) => {
   if (!url) return "/default-avatar.png";
@@ -90,17 +93,30 @@ const Profile = () => {
 
   const isOwnProfile = user && (paramId === "me" || profile?._id === user._id);
 
-  const handleDelete = async (postId) => {
-    if (!confirm("Are you sure you want to delete this post?")) return;
-    try {
-      await deletePost(postId);
-      setPosts((prev) => prev.filter((p) => p._id !== postId));
-      setSelectedPost((prev) => (prev && prev._id === postId ? null : prev));
-    } catch (err) {
-      console.error("❌ Delete failed:", err);
-      alert("Delete failed ❌");
+const handleDelete = async (postId) => {
+  console.log("🗑️ Trying to delete post:", postId);
+  try {
+    const res = await fetch(`${backendURL}/posts/${postId}`, {
+      method: "DELETE",
+      credentials: "include",
+    });
+
+    const data = await res.json();
+    console.log("🔄 Delete response:", data);
+
+    if (res.ok) {
+      alert("Post deleted successfully 🗑️");
+      setPosts((prev) => prev.filter((post) => post._id !== postId));
+      onClose?.(); // Close modal if passed
+    } else {
+      console.error("❌ Delete failed:", data.message);
     }
-  };
+  } catch (error) {
+    console.error("❌ Error deleting post:", error);
+  }
+};
+
+
 
   const handleFollowToggle = async () => {
     if (!profile || !user) return;

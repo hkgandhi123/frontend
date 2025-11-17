@@ -6,59 +6,85 @@ const CreatePostComponent = ({ onPostCreated, onClose }) => {
   const [title, setTitle] = useState("");
   const [subtitle, setSubtitle] = useState("");
   const [content, setContent] = useState("");
-  const [media, setMedia] = useState(null); // 🟢 Optional image/video file
-  const [mediaPreview, setMediaPreview] = useState(null); // 🟢 Preview
+  const [media, setMedia] = useState(null);
+  const [mediaPreview, setMediaPreview] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const BACKEND_URL = "https://bkc-dt1n.onrender.com";
-  // const BACKEND_URL = "http://localhost:5000";
 
-  /* -------------------- HANDLE MEDIA CHANGE -------------------- */
+  /* -------------------- MEDIA CHANGE -------------------- */
   const handleMediaChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
 
-    setMedia(file);
+    if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
+      return alert("Only images or videos allowed.");
+    }
+    if (file.size > 8 * 1024 * 1024) {
+      return alert("Max 8MB allowed.");
+    }
 
-    // 🖼 Create preview for image/video
-    const previewURL = URL.createObjectURL(file);
-    setMediaPreview(previewURL);
+    setMedia(file);
+    setMediaPreview(URL.createObjectURL(file));
   };
 
-  /* -------------------- HANDLE FORM SUBMIT -------------------- */
+  /* -------------------- UPLOAD TO BACKEND -> CLOUDINARY -------------------- */
+  const uploadToServer = async (file) => {
+
+    // ⚠ FIX 1: Prevent calling /upload if no media selected
+    if (!file) {
+      console.log("⚠ No media selected → skipping upload");
+      return "";
+    }
+
+    const formData = new FormData();
+    formData.append("media", file);
+
+    const { data } = await axios.post(`${BACKEND_URL}/upload`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },   // ⚠ FIX 2
+      withCredentials: true,
+    });
+
+    return data.url; // Cloudinary secure_url
+  };
+
+  /* -------------------- SUBMIT -------------------- */
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    if (!title.trim() || !content.trim()) {
-      return alert("Please enter title and content");
+    if (!title.trim() && !content.trim()) {
+      return alert("Please write something.");
     }
 
     try {
       setLoading(true);
 
-      const formData = new FormData();
-      formData.append("title", title);
-      formData.append("subtitle", subtitle);
-      formData.append("content", content);
-      if (media) formData.append("media", media); // 🟢 Optional media
+      let mediaUrl = "";
 
-      console.log("📤 Uploading post to:", `${BACKEND_URL}/posts`);
-      for (let pair of formData.entries()) console.log(pair[0], pair[1]);
+      // ⚠ FIX 3: Only upload when media actually exists
+      if (media) {
+        console.log("📤 Uploading media to backend...");
+        mediaUrl = await uploadToServer(media);
+        console.log("✅ Uploaded:", mediaUrl);
+      }
 
-     const { data } = await axios.post(`${BACKEND_URL}/posts`, formData, {
-  headers: { "Content-Type": "multipart/form-data" },
-  withCredentials: true,
-});
+      const payload = {
+        title,
+        subtitle,
+        content,
+        mediaUrl,
+      };
 
-console.log("✅ Post created successfully:", data);
-console.log("🧩 Saved post mediaUrl:", data?.post?.mediaUrl);
+      console.log("📤 Sending post to backend:", payload);
 
+      const { data } = await axios.post(`${BACKEND_URL}/posts`, payload, {
+        withCredentials: true,
+      });
 
-      alert("✅ Post published successfully!");
-
+      alert("✅ Post published!");
       onPostCreated && onPostCreated(data.post);
 
-      // Reset fields
+      // Reset
       setTitle("");
       setSubtitle("");
       setContent("");
@@ -66,12 +92,8 @@ console.log("🧩 Saved post mediaUrl:", data?.post?.mediaUrl);
       setMediaPreview(null);
       onClose && onClose();
     } catch (err) {
-      console.error("❌ Post upload error:", err.response?.data || err);
-      alert(
-        err.response?.data?.message ||
-          err.response?.data?.error ||
-          "Failed to publish post."
-      );
+      console.error("❌ POST ERROR:", err.response || err);
+      alert(err.response?.data?.message || "Failed to post.");
     } finally {
       setLoading(false);
     }
@@ -88,16 +110,14 @@ console.log("🧩 Saved post mediaUrl:", data?.post?.mediaUrl);
         📝 Create Post
       </h2>
 
-      {/* Title */}
       <input
         type="text"
-        placeholder="Title"
+        placeholder="Title (optional)"
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         className="w-full p-3 border rounded-xl"
       />
 
-      {/* Subtitle */}
       <input
         type="text"
         placeholder="Subtitle (optional)"
@@ -106,60 +126,44 @@ console.log("🧩 Saved post mediaUrl:", data?.post?.mediaUrl);
         className="w-full p-3 border rounded-xl"
       />
 
-      {/* Content */}
       <textarea
-        placeholder="Write your post..."
+        placeholder="Write something..."
         value={content}
         onChange={(e) => setContent(e.target.value)}
         className="w-full h-40 p-3 border rounded-xl"
       />
 
-      {/* Optional Media Upload */}
       <div>
-        <label className="block font-medium mb-1">Attach Image or Video (optional):</label>
-        <input
-          type="file"
-          accept="image/*,video/*"
-          onChange={handleMediaChange}
-          className="w-full"
-        />
+        <label className="font-medium mb-1">Attach Image or Video:</label>
+        <input type="file" accept="image/*,video/*" onChange={handleMediaChange} />
 
-        {/* Preview */}
         {mediaPreview && (
           <div className="mt-3 rounded-xl overflow-hidden border">
-            {media?.type.startsWith("video/") ? (
-              <video
-                src={mediaPreview}
-                controls
-                className="w-full max-h-64 object-cover"
-              />
+            {media?.type?.startsWith("video/") ? (
+              <video src={mediaPreview} controls className="w-full max-h-64" />
             ) : (
-              <img
-                src={mediaPreview}
-                alt="Preview"
-                className="w-full max-h-64 object-cover"
-              />
+              <img src={mediaPreview} className="w-full max-h-64" alt="preview" />
             )}
           </div>
         )}
       </div>
 
-      {/* Buttons */}
-      <div className="flex justify-between mt-4">
+      <div className="flex justify-between">
         <button
           type="button"
           onClick={onClose}
-          className="px-4 py-2 rounded-lg bg-gray-300 hover:bg-gray-400 transition"
+          className="px-4 py-2 bg-gray-300 rounded-lg"
           disabled={loading}
         >
           Cancel
         </button>
+
         <button
           type="submit"
-          className="px-5 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700 transition"
+          className="px-5 py-2 bg-green-600 text-white rounded-lg"
           disabled={loading}
         >
-          {loading ? "Publishing..." : "Publish Post"}
+          {loading ? "Publishing..." : "Publish"}
         </button>
       </div>
     </motion.form>

@@ -19,7 +19,10 @@ const PostModal = ({
 
   const handleDelete = () => {
     setShowMenu(false);
-    if (onDelete) onDelete(post._id);
+    if (onDelete) {
+      onDelete(post._id); // 🔁 Delete post
+      onClose();          // ❌ Close modal after deletion
+    }
   };
 
   const handleEdit = () => {
@@ -36,7 +39,7 @@ const PostModal = ({
         className="relative max-w-4xl w-full p-4"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* ✅ If PostCard fails to show image, we’ll show backup here */}
+        {/* ❕ Backup image if no mediaUrl or image */}
         {!post.image && !post.mediaUrl ? (
           <img
             src="/default-post.png"
@@ -45,7 +48,7 @@ const PostModal = ({
           />
         ) : null}
 
-        {/* ✅ PostCard displays the actual post */}
+        {/* 🖼️ PostCard shows the actual post content */}
         <PostCard
           post={{
             ...post,
@@ -53,7 +56,7 @@ const PostModal = ({
           }}
         />
 
-        {/* ✏️ Optional Edit/Delete menu for your own posts */}
+        {/* ✏️ Edit/Delete Menu for Profile Owner */}
         {isOwnProfile && (
           <div className="absolute top-4 right-4">
             <button

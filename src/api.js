@@ -1,5 +1,7 @@
 import axios from "axios";
 
+
+
 /* ------------------ BASE CONFIG ------------------ */
 export const backendURL =
   process.env.REACT_APP_API_URL || "https://bkc-dt1n.onrender.com";
@@ -148,10 +150,6 @@ export const updatePost = async (id, formData) => {
   return post;
 };
 
-export const deletePost = async (id) => {
-  const res = await api.delete(`/posts/${id}`);
-  return res.data;
-};
 
 /* ------------------ STORIES ------------------ */
 
@@ -221,4 +219,24 @@ export const getFollowingList = async (userId) => {
     ...u,
     profilePic: u.profilePic ? resolveURL(u.profilePic) : "/default-avatar.png",
   }));
+};
+
+export const getPostById = async (postId) => {
+  const res = await api.get(`/posts/${postId}`);
+  return res.data;
+};
+
+
+export const deletePost = async (postId) => {
+  try {
+    const res = await fetch(`${backendURL}/posts/${postId}/delete`, {
+      method: "DELETE",       
+      credentials: "include",
+    });
+    if (!res.ok) throw new Error("Delete failed");
+    return res.json();
+  } catch (error) {
+    console.error("❌ Error deleting post:", error.message);
+    throw error;
+  }
 };

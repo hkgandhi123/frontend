@@ -7,7 +7,7 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
     'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
-  background-color: #0f172a; /* fallback dark background */
+  background-color: #5c6989; /* fallback dark background */
   color:black;
   overflow-x: hidden;
 }
@@ -28,7 +28,7 @@ body {
 
 /* 🌫️ Optional glassmorphism effect for cards */
 .card-glass {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(7, 7, 7, 0.1);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 1rem;

@@ -53,22 +53,31 @@ export const UserProvider = ({ children }) => {
     await fetchUser();
   };
 
-  /* 🔐 Normal Login */
-  const handleLogin = async ({ email, password }) => {
-    try {
-      const data = await login({ email, password });
-      setUser({
-        ...data.user,
-        profilePic: getProfilePic(data.user.profilePic),
-      });
-      return { success: true, user: data.user };
-    } catch (err) {
-      return {
-        success: false,
-        message: err.response?.data?.message || "Login failed ❌",
-      };
+  /* 🔐 Normal Login (FIXED for phone/email login) */
+const handleLogin = async ({ emailOrPhone, password }) => {
+  try {
+    const data = await login({ emailOrPhone, password });
+
+    // Save token to localStorage for API calls like deletePost
+    if (data.token) {
+      localStorage.setItem("token", data.token);
     }
-  };
+
+    setUser({
+      ...data.user,
+      profilePic: getProfilePic(data.user.profilePic),
+    });
+
+    return { success: true, user: data.user };
+  } catch (err) {
+    return {
+      success: false,
+      message: err.response?.data?.message || "Login failed ❌",
+    };
+  }
+};
+
+
 
   /* 🆕 Signup */
   const handleSignup = async ({ username, email, password }) => {
@@ -88,31 +97,30 @@ export const UserProvider = ({ children }) => {
   };
 
   /* ✅ ✅ ✅ GOOGLE LOGIN (NEW) */
-  const handleGoogleLogin = async (credential) => {
-    try {
-      const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: credential }),
-      });
+ const handleGoogleLogin = async (credential) => {
+  try {
+    const res = await fetch(`${import.meta.env.VITE_API_URL}/api/auth/google`, {
+      method: "POST",
+      credentials: "include", // ✅ important
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token: credential }),
+    });
 
-      const data = await res.json();
-      if (!data.success) {
-        return { success: false, message: "Google Login Failed ❌" };
-      }
+    const data = await res.json();
+    if (!data.success) return { success: false, message: "Google Login Failed ❌" };
 
-      // ✅ Save user in context
-      setUser({
-        ...data.user,
-        profilePic: getProfilePic(data.user.profilePic),
-      });
+    setUser({
+      ...data.user,
+      profilePic: getProfilePic(data.user.profilePic),
+    });
 
-      return { success: true };
-    } catch (err) {
-      console.log(err);
-      return { success: false, message: "Google Login Error ❌" };
-    }
-  };
+    return { success: true };
+  } catch (err) {
+    console.log(err);
+    return { success: false, message: "Google Login Error ❌" };
+  }
+};
+
 
   const handleLogout = async () => {
     try {
@@ -148,6 +156,9 @@ export const UserProvider = ({ children }) => {
     setNewPostGlobal(normalized);
   };
 
+ 
+
+
   return (
     <UserContext.Provider
       value={{
@@ -164,6 +175,7 @@ export const UserProvider = ({ children }) => {
         handleLogout,
         addNewPost,
         newPostGlobal,
+         
       }}
     >
       {children}

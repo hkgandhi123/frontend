@@ -13,13 +13,20 @@ import Reels from "./pages/Reels";
 import EditProfile from "./pages/EditProfile";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Messages from "./pages/Messages";
+import Notification from "./pages/Notifications";
 import Settings from "./pages/Settings";
-import Privacy from "./pages/Privacy"; // ✅ Correct spelling
+import Privacy from "./pages/Privacy";
+import TrendingPage from "./pages/Trendingpage";
+import EditPostPage from "./pages/EditPostPage";
+import GAListener from "./GAListener";
 
 function App() {
   return (
     <UserProvider>
       <Router>
+        {/* 🔹 GA Listener to track all route changes */}
+        <GAListener />
+
         <Routes>
           {/* ✅ Protected pages */}
           <Route
@@ -104,6 +111,23 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/trending"
+            element={
+              <ProtectedRoute>
+                <TrendingPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/notifications"
+            element={
+              <ProtectedRoute>
+                <Notification />
+              </ProtectedRoute>
+            }
+          />
+          <Route path="/edit-post/:id" element={<EditPostPage />} />
 
           {/* ✅ Public pages */}
           <Route path="/login" element={<Login />} />

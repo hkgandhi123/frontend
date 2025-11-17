@@ -27,11 +27,12 @@ const Home = () => {
   const [showStoryModal, setShowStoryModal] = useState(false);
   const [selectedStory, setSelectedStory] = useState(null);
 
-  // 🔹 Header Hide States
+  // 🔹 Header hide states
   const [hideHeader, setHideHeader] = useState(false);
   const lastScrollRef = useRef(0);
   const scrollContainerRef = useRef(null);
 
+  // 🔹 Scroll listener
   useEffect(() => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return;
@@ -39,11 +40,8 @@ const Home = () => {
     const handleScroll = () => {
       const currentScroll = scrollContainer.scrollTop;
 
-      if (currentScroll > lastScrollRef.current + 20) {
-        setHideHeader(true); // scroll down → hide
-      } else if (currentScroll < lastScrollRef.current - 20) {
-        setHideHeader(false); // scroll up → show
-      }
+      if (currentScroll > lastScrollRef.current + 20) setHideHeader(true);
+      else if (currentScroll < lastScrollRef.current - 20) setHideHeader(false);
 
       lastScrollRef.current = currentScroll;
     };
@@ -59,7 +57,7 @@ const Home = () => {
 
   const normalizePosts = (data = []) =>
     data
-      .filter((p) => !!p)
+      .filter(Boolean)
       .map((p) => {
         const user = p?.user ?? {};
         const safeUser = {
@@ -73,7 +71,7 @@ const Home = () => {
               : "https://via.placeholder.com/50",
         };
 
-        const mediaUrl = p.media || p.image || null;
+        const mediaUrl = p.mediaUrl || p.image || null;
         const mediaType =
           p.mediaType ||
           (mediaUrl?.match(/\.(mp4|webm|mkv)$/i) ? "video" : "image");
@@ -135,16 +133,25 @@ const Home = () => {
     fetchStories();
   }, [fetchPosts, fetchStories]);
 
+  // 🔹 Delete Post Handler
   const handleDeletePost = async (id) => {
+    const postExists = posts.find((p) => p._id === id);
+    if (!postExists) return console.warn("Post already deleted or invalid ID:", id);
+
     try {
-      await deletePost(id);
+      console.log("🚨 Deleting Post ID:", id);
+      const result = await deletePost(id);
+      console.log("✅ Delete API Result:", result);
+
       setPosts((prev) => prev.filter((p) => p._id !== id));
       setNewPostGlobal((prev) => (prev?._id === id ? null : prev));
     } catch (err) {
-      console.error("❌ Error deleting post:", err);
+      console.error("❌ Error deleting post:", err.message);
+      alert(err.message); // Optional: user-friendly alert
     }
   };
 
+  // 🔹 Add new post to state
   const handleNewPost = (newPost) => {
     const normalized = normalizePosts([newPost])[0];
     if (normalized) {
@@ -158,113 +165,101 @@ const Home = () => {
       <Helmet>
         <title>HitBit</title>
       </Helmet>
-<div
-          className={` top-0 left-0 right-0 z-50 transition-transform duration-300 ${
-            hideHeader ? "-translate-y-full" : "translate-y-0"
-          }`}
-        >
-          <HomeHeader
-            onAddPost={() => setShowPostModal(true)}
-            onAddStory={() => setShowStoryModal(true)}
-          />
-        </div>
-      {/* 🔹 Background */}
-     
 
-      
-        
+      {/* Header */}
+      <div
+        className={`top-0 left-0 right-0 z-50 transition-transform duration-300 ${
+          hideHeader ? "-translate-y-full" : "translate-y-0"
+        }`}
+      >
+        <HomeHeader
+          onAddPost={() => setShowPostModal(true)}
+          onAddStory={() => setShowStoryModal(true)}
+        />
+      </div>
 
-        {/* 🔹 Scrollable Content (Stories + Posts) */}
-        <div
-          ref={scrollContainerRef}
-          className="overflow-y-auto h-[calc(100vh-5rem)] mt-[3rem] pb-20 px-2 sm:px-0 relative z-10"
-        >
-          {/* Stories scroll with posts */}
-          <div className="border-b border-white/10 backdrop-blur-md bg-blue-900">
-            <div className="flex space-x-3 p-2 overflow-x-auto">
-              <div
-                className="flex flex-col items-center cursor-pointer"
-                onClick={() => setShowStoryModal(true)}
-              >
-                <div className="w-12 h-12 rounded-full flex items-center justify-center bg-white/30 border border-white/40">
-                  <span className="text-2xl font-bold">+</span>
-                </div>
-                <span className="text-xs mt-1 text-gray-100">Add Story</span>
+      {/* Scrollable content */}
+      <div
+        ref={scrollContainerRef}
+        className="overflow-y-auto h-[calc(100vh-5rem)] mt-[3rem] pb-20 px-2 sm:px-0 relative z-10"
+      >
+        {/* Stories */}
+        <div className="border-b border-white/10 backdrop-blur-md bg-blue-900">
+          <div className="flex space-x-3 p-2 overflow-x-auto">
+            {/* Add Story */}
+            <div
+              className="flex flex-col items-center cursor-pointer"
+              onClick={() => setShowStoryModal(true)}
+            >
+              <div className="w-12 h-12 rounded-full flex items-center justify-center bg-white/30 border border-white/40">
+                <span className="text-2xl font-bold">+</span>
               </div>
-
-              {stories
-                .filter((s) => s?.user?._id && s.user._id !== currentUser?._id)
-                .map((story) => (
-                  <div key={story._id} className="flex flex-col items-center">
-                    <div
-                      className="w-16 h-16 p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 rounded-full cursor-pointer"
-                      onClick={() => setSelectedStory(story)}
-                    >
-                      <img
-                        src={story.user?.profilePic}
-                        alt={story.user?.username}
-                        className="w-full h-full rounded-full object-cover border-2 border-white"
-                      />
-                    </div>
-                    <span
-                      className="text-xs mt-1 cursor-pointer text-gray-100"
-                      onClick={() => navigate(`/profile/${story.user._id}`)}
-                    >
-                      {story.user?.username}
-                    </span>
-                  </div>
-                ))}
+              <span className="text-xs mt-1 text-gray-100">Add Story</span>
             </div>
-          </div>
 
-          {/* Posts Section */}
-          <div className="mt-0">
-            {loading ? (
-              <p className="text-center mt-10 text-gray-100">
-                Loading posts...
-              </p>
-            ) : posts.length === 0 ? (
-              <p className="text-center mt-10 text-gray-100">No posts yet</p>
-            ) : (
-              posts.map((post) => (
-                <div key={post._id} className="w-full">
-                  <PostCard
-                    post={post}
-                    onDelete={handleDeletePost}
-                    onFollowToggle={() => {}}
-                  />
+            {stories
+              .filter((s) => s?.user?._id && s.user._id !== currentUser?._id)
+              .map((story) => (
+                <div key={story._id} className="flex flex-col items-center">
+                  <div
+                    className="w-16 h-16 p-[2px] bg-gradient-to-tr from-yellow-400 via-pink-500 to-purple-600 rounded-full cursor-pointer"
+                    onClick={() => setSelectedStory(story)}
+                  >
+                    <img
+                      src={story.user?.profilePic}
+                      alt={story.user?.username}
+                      className="w-full h-full rounded-full object-cover border-2 border-white"
+                    />
+                  </div>
+                  <span
+                    className="text-xs mt-1 cursor-pointer text-gray-100"
+                    onClick={() => navigate(`/profile/${story.user._id}`)}
+                  >
+                    {story.user?.username}
+                  </span>
                 </div>
-              ))
-            )}
+              ))}
           </div>
         </div>
 
-        {/* Modals */}
-        {showPostModal && (
-          <CreatePostModal
-            onClose={() => setShowPostModal(false)}
-            onPostCreated={handleNewPost}
-          />
-        )}
-        {showStoryModal && (
-          <CreateStoryModal
-            onClose={() => setShowStoryModal(false)}
-            onStoryCreated={fetchStories}
-          />
-        )}
-        {selectedStory && (
-          <StoryViewerModal
-            story={selectedStory}
-            onClose={() => setSelectedStory(null)}
-          />
-        )}
-
-        {/* Bottom Nav */}
-        <div className="fixed bottom-0 left-0 right-0 z-50">
-          <BottomNav />
+        {/* Posts */}
+        <div className="mt-0">
+          {loading ? (
+            <p className="text-center mt-10 text-gray-100">Loading posts...</p>
+          ) : posts.length === 0 ? (
+            <p className="text-center mt-10 text-gray-100">No posts yet</p>
+          ) : (
+            posts.map((post) => (
+              <div key={post._id} className="w-full">
+                <PostCard post={post} onDelete={handleDeletePost} onFollowToggle={() => {}} />
+              </div>
+            ))
+          )}
         </div>
       </div>
-    
+
+      {/* Modals */}
+      {showPostModal && (
+        <CreatePostModal
+          onClose={() => setShowPostModal(false)}
+          onPostCreated={handleNewPost}
+        />
+      )}
+      {showStoryModal && (
+        <CreateStoryModal
+          onClose={() => setShowStoryModal(false)}
+          onStoryCreated={fetchStories}
+        />
+      )}
+      {selectedStory && (
+        <StoryViewerModal story={selectedStory} onClose={() => setSelectedStory(null)} />
+      )}
+
+      {/* Bottom Nav */}
+      <div className="fixed bottom-0 left-0 right-0 z-50">
+        <BottomNav />
+      </div>
+    </div>
   );
 };
 

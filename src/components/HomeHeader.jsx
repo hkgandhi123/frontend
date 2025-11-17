@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { AiOutlineHeart } from "react-icons/ai";
-import { LuSearch } from "react-icons/lu";
+import { LuSearch,LuMessageCircleMore } from "react-icons/lu";
 import { FiMessageCircle } from "react-icons/fi";
 import { useNavigate } from "react-router-dom";
 import { useUserContext } from "../context/UserContext";
@@ -85,7 +85,7 @@ const HomeHeader = () => {
 
         {/* ✅ Message Icon with Conditional Badge */}
         <div className="relative cursor-pointer" onClick={() => navigate("/messages")}>
-          <FiMessageCircle className="text-white text-2xl hover:scale-110 transition-transform" />
+          <LuMessageCircleMore className="text-white text-2xl hover:scale-110 transition-transform" />
 
           {unreadMessages > 0 && (
             <span className="absolute -top-1 -right-2 bg-red-500 text-white text-[7px] px-1 py-[1px] rounded-full">
